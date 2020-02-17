@@ -33,7 +33,7 @@ const KEY_TABLE = [
     0x8A, 0xC3, 0xE7, 0xA5, 0xE8, 0x6B, 0x0D, 0x74, 0x10, 0x73, 0x33, 0x17, 0x0D, 0x37, 0x21, 0x19
 ]
 
-encrypt = (packetBuffer) => {
+exports.encrypt = (packetBuffer) => {
     let checksumEnc = 0, checksumDec = 0, keyResult = 0
     let keyIncrement = KEY_TABLE[packetBuffer[2] * 2] & 0xFF
 
@@ -68,7 +68,7 @@ encrypt = (packetBuffer) => {
     return packetBuffer
 }
 
-decrypt = (packetBuffer) => {
+exports.decrypt = (packetBuffer) => {
     let checksumEnc = 0, checksumDec = 0, keyResult = 0
     let keyIncrement = KEY_TABLE[packetBuffer[2] * 2]
 
@@ -101,10 +101,8 @@ decrypt = (packetBuffer) => {
     if (packetBuffer[3] == ((checksumEnc - checksumDec) & 0xFF))
         return packetBuffer
     else
-        return packetBuffer
+        return null
 }
-
-exports = {encrypt, decrypt}
 
 /*let buffer1 = [0x10, 0x00, 0x60, 0x15, 0x75, 0xf3, 0x96, 0xf9, 0x9f, 0xd5, 0xe4, 0x22, 0xba, 0x01, 0xf8, 0x00]
 console.log(buffer1.map(x => '0x' + x.toString(16)).toString())

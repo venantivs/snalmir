@@ -1,4 +1,5 @@
 const net = require('net')
+const packetHandler = require('./../network/packet-handler.js')
 
 const port = 8281
 
@@ -12,7 +13,7 @@ server.on('connection', (socket) => {
 	console.log('A new connection has been established.')
 
 	socket.on('data', (chunk) => {
-		console.log(chunk)
+        packetHandler.segregate(packet)
 	})
 
 	socket.on('end', () => {
