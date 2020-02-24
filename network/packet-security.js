@@ -37,10 +37,8 @@ exports.encrypt = (packetBuffer) => {
     let checksumEnc = 0, checksumDec = 0, keyResult = 0
     let keyIncrement = KEY_TABLE[packetBuffer[2] * 2] & 0xFF
 
-    packetBuffer.forEach((element, index) => {
-        if (index < 4)
-            return
-
+    // Utilizar var em um loop é consideravelmente mais rápido que let
+    for (var index = 4, len = packetBuffer.length; index < len; index++) {
         checksumDec += packetBuffer[index]
         keyResult = KEY_TABLE[((keyIncrement & 0x800000FF) * 2) + 1]
 
@@ -61,7 +59,7 @@ exports.encrypt = (packetBuffer) => {
 
         checksumEnc += packetBuffer[index]
         keyIncrement += 1
-    })
+    }
 
     packetBuffer[3] = (checksumEnc - checksumDec) & 0xFF
 
@@ -72,10 +70,7 @@ exports.decrypt = (packetBuffer) => {
     let checksumEnc = 0, checksumDec = 0, keyResult = 0
     let keyIncrement = KEY_TABLE[packetBuffer[2] * 2]
 
-    packetBuffer.forEach((element, index) => {
-        if (index < 4)
-            return
-
+    for (var index = 4, len = packetBuffer.length; index < len; index++) {
         checksumEnc += packetBuffer[index]
         keyResult = KEY_TABLE[((keyIncrement & 0x800000FF) * 2) + 1]
 
@@ -96,7 +91,7 @@ exports.decrypt = (packetBuffer) => {
 
         checksumDec += packetBuffer[index]
         keyIncrement += 1
-    })
+    }
 
     if (packetBuffer[3] == ((checksumEnc - checksumDec) & 0xFF))
         return packetBuffer
