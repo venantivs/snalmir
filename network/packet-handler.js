@@ -12,6 +12,19 @@ getPacketHeader = (packet) => {
     }
 }
 
+setPacketHeader = (object) => {
+    let packetHeaderBuffer = Buffer.alloc(12)
+
+    packetHeaderBuffer.writeUInt16LE(object.packetHeader.size, 0)
+    packetHeaderBuffer.writeUInt8(object.packetHeader.key, 2)
+    packetHeaderBuffer.writeUInt8(object.packetHeader.checksum, 3)
+    packetHeaderBuffer.writeUInt16LE(object.packetHeader.packetId, 4)
+    packetHeaderBuffer.writeUInt16LE(object.packetHeader.clientId, 6)
+    packetHeaderBuffer.writeUInt32LE(object.packetHeader.timestamp, 8)
+
+    return packetHeaderBuffer
+}
+
 packetToObject = (packet, packetHeader, packetObject) => {
 
     let obj = Object.assign({}, packetObject)
@@ -33,6 +46,10 @@ packetToObject = (packet, packetHeader, packetObject) => {
                 obj[key] = packet.readUInt32LE(index)
                 index += 4
                 break
+            case '@Int32':
+                obj[key] = packet.readInt32LE(index)
+                index += 4
+                break
             default:
                 if (packetObject[key].includes('@Char[')) {
                     let arrSize = parseInt(packetObject[key].substr(6, packetObject[key].indexOf(']') - 1))
@@ -45,12 +62,41 @@ packetToObject = (packet, packetHeader, packetObject) => {
     return obj
 }
 
-objectToPacket = (object, packetHeader, packetObject) => {
+objectToPacket = (object, packetObject) => {
+
+    let packetBuffer = Buffer.alloc(object.packetHeader.size)
+    let index = 12
+
+    setPacketHeader(object).copy(packetBuffer)
+
     for (var key in packetObject) {
         switch (packetObject[key]) {
-            
+            case '@Int8':
+                packetBuffer.writeUInt8(object[key], index)
+                index++
+                break
+            case '@UInt16':
+                packetBuffer.writeUInt16LE(object[key], index)
+                index += 2
+                break
+            case '@UInt32':
+                packetBuffer.writeUInt32LE(object[key], index)
+                index += 4
+                break
+            case '@Int32':
+                packetBuffer.writeInt32LE(object[key], index)
+                index += 4
+                break
+            default:
+                if (packetObject[key].includes('@Char[')) {
+                    let arrSize = parseInt(packetObject[key].substr(6, packetObject[key].indexOf(']') - 1))
+                    packetBuffer.write(object[key], index, arrSize, 'ascii');
+                    index += arrSize
+                }
         }
     }
+
+    return packetBuffer
 }
 
 exports.segregate = (packet) => {
@@ -67,6 +113,9 @@ exports.segregate = (packet) => {
 
     switch (packetHeader.packetId) {
         case 0x20D:
-            return packetToObject(packet, packetHeader, packetDef.P20D)
+            console.log(packet)
+            let object = packetToObject(packet, packetHeader, packetDef.P20D)
+            console.log(object)
+            console.log(objectToPacket(object, packetDef.P20D))
     }
 }

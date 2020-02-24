@@ -1,9 +1,17 @@
 const net = require('net')
 const packetHandler = require('../network/packet-handler')
+const http = require('http')
 
 const port = 8281
 
 const server = net.createServer()
+
+let userList = []
+
+http.createServer((req, res) => {
+	res.write(`${userList.length}-1-1-1-1-1-1-1-1-1`)
+	res.end()
+}).listen(80)
 
 server.listen(port, () => {
 	console.log(`Server's listening on port ${port}.`)

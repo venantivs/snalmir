@@ -37,7 +37,6 @@ exports.encrypt = (packetBuffer) => {
     let checksumEnc = 0, checksumDec = 0, keyResult = 0
     let keyIncrement = KEY_TABLE[packetBuffer[2] * 2] & 0xFF
 
-    // Utilizar var em um loop é consideravelmente mais rápido que let
     for (var index = 4, len = packetBuffer.length; index < len; index++) {
         checksumDec += packetBuffer[index]
         keyResult = KEY_TABLE[((keyIncrement & 0x800000FF) * 2) + 1]
