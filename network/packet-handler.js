@@ -1,7 +1,7 @@
 const packetDef = require('./packets/packet-def')
 const packetSecurity = require('./packet-security')
 
-getPacketHeader = (packet) => {
+getPacketHeaderObject = (packet) => {
     return {
         size: packet.readUInt16LE(0),
 		key: packet.readUInt8(2),
@@ -12,7 +12,7 @@ getPacketHeader = (packet) => {
     }
 }
 
-setPacketHeader = (object) => {
+getPacketHeaderBuffer = (object) => {
     let packetHeaderBuffer = Buffer.alloc(12)
 
     packetHeaderBuffer.writeUInt16LE(object.packetHeader.size, 0)
@@ -67,7 +67,7 @@ objectToPacket = (object, packetObject) => {
     let packetBuffer = Buffer.alloc(object.packetHeader.size)
     let index = 12
 
-    setPacketHeader(object).copy(packetBuffer)
+    getPacketHeaderBuffer(object).copy(packetBuffer)
 
     for (var key in packetObject) {
         switch (packetObject[key]) {
@@ -109,7 +109,7 @@ exports.segregate = (packet) => {
 
     packet = packetSecurity.decrypt(packet)
 
-    const packetHeader = getPacketHeader(packet)
+    const packetHeader = getPacketHeaderObject(packet)
 
     switch (packetHeader.packetId) {
         case 0x20D:
