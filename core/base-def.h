@@ -526,7 +526,7 @@ struct mob_st
 	char unknown2[50];
 };
 
-struct charlist_st
+struct char_list_st
 {
 	short position_x[MOB_PER_ACCOUNT];
 	short position_y[MOB_PER_ACCOUNT];
