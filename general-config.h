@@ -11,6 +11,7 @@
 #define __GENERAL_CONFIG_H__
 
 // Server Config
+#define SERVER_PORT 8281		/* Porta do servidor. 8281 para Malech. */
 #define MAX_USERS_PER_CHANNEL 500	/* Máximo de usuários por canal */
 #define CHANNEL_COUNT 1			/* Número de canais abertos (MAX 8) */
 

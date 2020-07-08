@@ -12,6 +12,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <strings.h>
 #include <ctype.h>
 #include <netdb.h>
@@ -26,14 +27,14 @@
 
 void* init_http_server()
 {
-	int listen_fd, comm_fd;
+	int master_socket_fd, comm_fd;
 
 	struct sockaddr_in serv_addr;
 	struct request request_info;
 
-	listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+	master_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 
-	if (listen_fd == -1)
+	if (master_socket_fd == -1)
 		fatal_error("socket");
 
 	bzero(&serv_addr, sizeof(serv_addr));
@@ -42,17 +43,15 @@ void* init_http_server()
 	serv_addr.sin_addr.s_addr = htons(INADDR_ANY);
 	serv_addr.sin_port = htons(HTTP_SERVER_PORT);
 
-	if (bind(listen_fd, (struct sockaddr*) &serv_addr, sizeof(serv_addr)) == -1)
+	if (bind(master_socket_fd, (struct sockaddr*) &serv_addr, sizeof(serv_addr)) == -1)
 		fatal_error("bind");
 
-	if (listen(listen_fd, 10) == -1)
+	if (listen(master_socket_fd, 10) == -1)
 		fatal_error("listen");
 
-	while(1)
+	while(true)
 	{
-		printf("Esperando por conexões...\n");
-
-		comm_fd = accept(listen_fd, (struct sockaddr*) NULL, NULL);
+		comm_fd = accept(master_socket_fd, (struct sockaddr*) NULL, NULL);
 
 		if (comm_fd == -1)
 			fatal_error("accept");
@@ -111,7 +110,7 @@ void get_request(int comm_fd, struct request* request_info)
 		i++;
 	}
 
-	request_info->method[i + 1] = '\0';
+	request_info->method[i] = '\0';
 
 	// Walk to the next word
 	while (isspace(buffer[i]) && i < (sizeof(buffer) - 1))
@@ -124,7 +123,7 @@ void get_request(int comm_fd, struct request* request_info)
 		i++; j++;
 	}
 
-	request_info->url[j + 1] = '\0';
+	request_info->url[j] = '\0';
 }
 
 /**********************************************************************/
@@ -158,7 +157,7 @@ void send_response(int comm_fd, int status_code, const char* content)
 	fprintf(buffer_stream, "Server: %s\r\n", SERVER_STRING);
 	fprintf(buffer_stream, "Content-Type: text/html\r\n");
 	fprintf(buffer_stream, "\r\n");
-	fprintf(buffer_stream, "<html><header><title>%s</title><header><body>%s</body></html>\r\n", content, content);
+	fprintf(buffer_stream, "%s\r\n", content);
 	fclose(buffer_stream);
 
 	send(comm_fd, buffer, sizeof(buffer), 0);

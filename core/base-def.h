@@ -1,6 +1,7 @@
 #ifndef __BASE_DEF_H__
 #define __BASE_DEF_H__
 
+#include <stdbool.h>
 #include <time.h>
 
 #include "../general-config.h"
@@ -317,8 +318,8 @@ struct trade_st
 	unsigned char trade_item_slot[15];
 	unsigned short other_client;
 	int gold;
-	unsigned char confirm;
-	unsigned char waiting;
+	bool confirm;
+	bool waiting;
 };
 
 struct settings_st
@@ -392,7 +393,7 @@ struct cubo_file_st
 	int mobs[25];
 	int time[25];
 	int status[25];
-	unsigned char answers[25];
+	bool answers[25];
 	char questions[25][128];
 	struct position_st O[25];
 	struct position_st X[25];
@@ -407,7 +408,7 @@ struct city_st
 	int taxes;
 	int challenger;
 	char guild_df[16];
-	unsigned char is_at_war;
+	bool is_at_war;
 };
 
 struct city_manager_st
@@ -448,7 +449,7 @@ struct status_st
 
 struct duel_st
 {
-	unsigned char start;
+	bool start;
 	int time;
 	int player_1;
 	int player_2;
@@ -575,7 +576,7 @@ struct subcelestial_st
 	short p_skill;
 	int learn;
 	int hold;
-	unsigned char sub;
+	bool sub;
 	char skill_bar_1[4];
 	char skill_bar_2[16];
 	struct affect_st affect[MAX_AFFECT];
