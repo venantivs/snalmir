@@ -30,6 +30,7 @@ bool create_account(char user[], char password[])
 		return false;
 
 	fclose(user_account);
+	return true;
 }
 
 bool delete_account(char user[], char password[])
@@ -41,10 +42,10 @@ bool delete_account(char user[], char password[])
 	if (access(file_path, F_OK) == -1) // Conta inexistente
 		return false;
 
-	return remove(file_path) == 0 ? true : false;
-}
+	if (remove(file_path) == -1)
+		perror("remove");
+	else
+		return true;
 
-bool login(unsigned char channel, unsigned short index, unsigned char packet_buffer[])
-{
-	
+	return false;
 }

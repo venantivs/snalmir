@@ -4,6 +4,7 @@
  * Data: Julho de 2020
  * Arquivo: network/server.c
  * Descrição: Arquivo onde o servidor principal é propriamente inicializado, recebe e envia pacotes.
+ * TODO: Atomizar start_server().
  */
 
 #include <stdio.h>
@@ -12,6 +13,7 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include <arpa/inet.h>
 #include <sys/types.h>
@@ -23,7 +25,52 @@
 #include "../general-config.h"
 #include "server.h"
 
-void* start_server()
+struct user_server_st users[MAX_USERS_PER_CHANNEL];
+struct mob_server_st mobs[30000];
+struct ground_item_st ground_items[4096];
+struct party_st parties[500];
+
+int current_time;
+int current_weather;
+
+int sec_counter;
+int min_counter;
+
+void sec_timer()
+{
+	sec_counter++;
+	
+}
+
+void* init_server()
+{
+	memset(users, 0, sizeof(struct user_server_st) * MAX_USERS_PER_CHANNEL);
+	memset(mobs, 0, sizeof(struct mob_server_st) * 30000);
+	memset(ground_items, 0, sizeof(struct ground_item_st) * 4096);
+	memset(parties, -1, sizeof(struct party_st) * 500);
+
+	current_time = 0;
+	current_weather = 0;
+
+	sec_counter = 0;
+	min_counter = 0;
+
+	struct itimerval it_val;
+
+	if (signal(SIGALRM, (void (*)(int)) sec_timer) == SIG_ERR)
+		fatal_error("signal");
+
+	it_val.it_value.tv_sec = 1;
+	it_val.it_value.tv_usec = 1000000;
+	it_val.it_interval = it_val.it_value;
+
+  	if (setitimer(ITIMER_REAL, &it_val, NULL) == -1)
+		fatal_error("setitimer");
+
+	return NULL;
+}
+
+void start_server()
 {
     	int master_socket_fd, new_socket, client_socket[MAX_USERS_PER_CHANNEL], bytes_read;
 	int max_sd;
@@ -94,7 +141,6 @@ void* start_server()
 				if(client_socket[i] == 0)
                 		{
                     			client_socket[i] = new_socket;
-                    			printf("Adding to list of sockets as %ld\n", i);
 					break;
                 		}
             		}

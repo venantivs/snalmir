@@ -25,7 +25,7 @@ int main(void)
 		if ((errno = pthread_create(&http_server_thread, NULL, init_http_server, NULL)) != 0)
 			fatal_error("pthread_create");
 
-	if ((errno = pthread_create(&main_server_thread, NULL, start_server, NULL)) != 0)
+	if ((errno = pthread_create(&main_server_thread, NULL, init_server, NULL)) != 0)
 		fatal_error("pthread_create");
 
 	pthread_join(http_server_thread, NULL);
