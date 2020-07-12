@@ -1,19 +1,27 @@
-PROJ_NAME := snalmir
+MAKEFLAGS += --silent
 
-C_SOURCE := $(wildcard ./*.c)
+TARGET = snalmir
+LIBS = -lpthread
+CC = gcc
+CFLAGS = -Wall
 
-H_SOURCE := $(wildcard ./*.h)
+.PHONY: default all clean
 
-OBJ := $(subst .c, .o, $(subst source, objects, $(C_SOURCE)))
+default: $(TARGET)
+all: default
 
-CC := gcc
+SRC = $(shell find . -name *.c)
+OBJECTS = $(patsubst %.c, %.o, $(SRC))
+HEADERS = $(wildcard *.h)
 
-CC_FLAGS := -Wall -Wextra -lpthread
+%.o: %.c $(HEADERS)
+	$(CC) $(CFLAGS) -c $< -o $@
 
-build: $(PROJ_NAME) clean
+.PRECIOUS: $(TARGET) $(OBJECTS)
 
-$(PROJ_NAME): $(OBJ)
-	$(CC) $^ $(CC_FLAGS) -o $@
+$(TARGET): $(OBJECTS)
+	$(CC) $(OBJECTS) -Wall $(LIBS) -o bin/$@
 
-clean: $(PROJ_NAME)
-	rm $(PROJ_NAME) *.o
+clean:
+	-rm -f *.o
+	-rm -f $(TARGET)
