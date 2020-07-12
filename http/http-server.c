@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <strings.h>
+#include <string.h>
 #include <ctype.h>
 #include <netdb.h>
 #include <unistd.h>
@@ -37,7 +37,7 @@ void* init_http_server()
 	if (master_socket_fd == -1)
 		fatal_error("socket");
 
-	bzero(&serv_addr, sizeof(serv_addr));
+	memset(&serv_addr, 0, sizeof(serv_addr));
 
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = htons(INADDR_ANY);
@@ -61,26 +61,24 @@ void* init_http_server()
 		if (!strcasecmp(request_info.method, "POST") || !strcasecmp(request_info.method, "HEAD"))
 		{
 			send_response(comm_fd, 501, "Not Implemented");
-			close(comm_fd);
-			continue;
+			goto error_out;
 		}
 
 		if (strcasecmp(request_info.method, "GET"))
 		{
 			send_response(comm_fd, 400, "Bad Request");
-			close(comm_fd);
-			continue;
+			goto error_out;
 		}
 
 		if (strcasecmp(request_info.url, "/"))
 		{
 			send_response(comm_fd, 404, "Not Found");
-			close(comm_fd);
-			continue;
+			goto error_out;
 		}
 
 		send_response(comm_fd, 200, "Hello World!");
-		
+
+error_out:		
 		close(comm_fd);
 	}
 
@@ -96,15 +94,14 @@ void* init_http_server()
 /**********************************************************************/
 void get_request(int comm_fd, struct request* request_info)
 {
-	char buffer[8192];
+	char buffer[8192] = {'\0'};
 
-	bzero(request_info, sizeof(struct request));
-	bzero(buffer, sizeof(buffer));
-	recv(comm_fd, buffer, sizeof(buffer), 0);
+	memset(request_info, 0, sizeof(struct request));
+	ssize_t bytes_read = recv(comm_fd, buffer, sizeof(buffer), 0);
 
 	size_t i = 0, j = 0;
 	// Get HTTP Request Method
-	while (!isspace(buffer[i]) && i < (sizeof(buffer) - 1))
+	while (!isspace(buffer[i]) && i < bytes_read && i < (sizeof(buffer) - 1))
 	{
 		request_info->method[i] = buffer[i];
 		i++;
@@ -117,7 +114,7 @@ void get_request(int comm_fd, struct request* request_info)
 		i++;
 
 	// Get HTTP Request URL
-	while (!isspace(buffer[i]) && i < (sizeof(buffer) - 1))
+	while (!isspace(buffer[i]) && i < bytes_read && i < (sizeof(buffer) - 1))
 	{
 		request_info->url[j] = buffer[i];
 		i++; j++;

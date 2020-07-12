@@ -11,7 +11,7 @@ extern struct ground_item_st ground_items[4096];
 extern struct party_st parties[500];
 extern struct settings_st settings;
 
-extern int current_time;
+extern unsigned long current_time;
 extern int current_weather;
 
 void* init_server();

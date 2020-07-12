@@ -4,7 +4,7 @@
  * Data: Julho de 2020
  * Arquivo: network/server.c
  * Descrição: Arquivo onde o servidor principal é propriamente inicializado, recebe e envia pacotes.
- * TODO: Atomizar start_server().
+ * TODO: Atomizar start_server(). Implementar epoll(7).
  */
 
 #include <stdio.h>
@@ -30,16 +30,24 @@ struct mob_server_st mobs[30000];
 struct ground_item_st ground_items[4096];
 struct party_st parties[500];
 
-int current_time;
+unsigned long current_time;
 int current_weather;
 
-int sec_counter;
-int min_counter;
+int sec_counter = 0;
+int min_counter = 0;
 
-void sec_timer()
+static void min_timer()
+{
+	min_counter++;
+}
+
+static void sec_timer()
 {
 	sec_counter++;
-	
+	current_time = (unsigned long) time(NULL);
+
+	if (sec_counter % 60 == 0)
+		min_timer();
 }
 
 void* init_server()
@@ -57,15 +65,19 @@ void* init_server()
 
 	struct itimerval it_val;
 
+	memset(&it_val, 0, sizeof(struct itimerval));
+
 	if (signal(SIGALRM, (void (*)(int)) sec_timer) == SIG_ERR)
 		fatal_error("signal");
 
 	it_val.it_value.tv_sec = 1;
-	it_val.it_value.tv_usec = 1000000;
+	it_val.it_value.tv_usec = 0;
 	it_val.it_interval = it_val.it_value;
 
   	if (setitimer(ITIMER_REAL, &it_val, NULL) == -1)
 		fatal_error("setitimer");
+
+	start_server();
 
 	return NULL;
 }
@@ -88,7 +100,7 @@ void start_server()
         	fatal_error("socket");
  
     	// Set master socket to allow multiple connections.
-    	if(setsockopt(master_socket_fd, SOL_SOCKET, SO_REUSEADDR, NULL, 0) < 0)
+    	if(setsockopt(master_socket_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0)
 		fatal_error("setsocketopt");
  
     	server_address.sin_family = AF_INET;
