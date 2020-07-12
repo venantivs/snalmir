@@ -10,9 +10,9 @@ CFLAGS = -Wall
 default: $(TARGET)
 all: default
 
-SRC = $(shell find . -name *.c)
-OBJECTS = $(patsubst %.c, %.o, $(SRC))
-HEADERS = $(wildcard *.h)
+SOURCE = $(shell find . -name *.c)
+HEADERS = $(shell find . -name *.h)
+OBJECTS = $(patsubst %.c, %.o, $(SOURCE))
 
 %.o: %.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -23,5 +23,5 @@ $(TARGET): $(OBJECTS)
 	$(CC) $(OBJECTS) -Wall $(LIBS) -o bin/$@
 
 clean:
-	-rm -f *.o
-	-rm -f $(TARGET)
+	-rm -f $(OBJECTS)
+	-rm -f bin/$(TARGET)
