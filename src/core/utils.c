@@ -1,7 +1,7 @@
 /*
  *
  * Licença: GPLv3
- * Autor: theskytalos
+ * Autor: callixtvs
  * Data: Julho de 2020
  * Arquivo: core/utils.c
  * Descrição: Arquivo onde funções auxiliares, como de error por exemplo, são implementadas.

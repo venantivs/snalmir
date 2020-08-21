@@ -1,7 +1,7 @@
 /*
  *
  * Licença: GPLv3
- * Autor: theskytalos
+ * Autor: callixtvs
  * Data: Julho de 2020
  * Arquivo: http/http-server.c
  * Descrição: Módulo servidor HTTP básico do servidor Snalmir.
@@ -70,13 +70,13 @@ void* init_http_server()
 			goto error_out;
 		}
 
-		if (strcasecmp(request_info.url, "/"))
+		if (strcasecmp(request_info.url, "/serv00.htm"))
 		{
 			send_response(comm_fd, 404, "Not Found");
 			goto error_out;
 		}
 
-		send_response(comm_fd, 200, "Hello World!");
+		send_response(comm_fd, 200, "0\r\n-1\r\n-1\r\n-1\r\n-1\r\n-1\r\n-1\r\n-1\r\n-1\r\n");
 
 error_out:		
 		close(comm_fd);

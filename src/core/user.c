@@ -1,6 +1,6 @@
 /*
  * Licença: GPLv3
- * Autor: theskytalos
+ * Autor: callixtvs
  * Data: Julho de 2020
  * Arquivo: core/user.c
  * Descrição: Arquivo onde são implementadas as funções que correspondem ao usuário em específico,

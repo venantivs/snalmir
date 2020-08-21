@@ -1,6 +1,6 @@
 /*
  * Licença: GPLv3
- * Autor: theskytalos
+ * Autor: callixtvs
  * Data: Julho de 2020
  * Arquivo: network/server.c
  * Descrição: Arquivo onde o servidor principal é propriamente inicializado, recebe e envia pacotes.

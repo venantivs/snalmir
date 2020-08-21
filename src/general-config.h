@@ -1,7 +1,7 @@
 /*
  *
  * Licença: GPLv3
- * Autor: theskytalos
+ * Autor: callixtvs
  * Data: Julho de 2020
  * Arquivo: general-config.h
  * Descrição: Arquivo de configuração geral do servidor.
@@ -17,7 +17,7 @@
 
 // HTTP Config
 #define HTTP_SERVER_ENABLED 1		/* Caso 0, o servidor HTTP não será inicializado */
-#define HTTP_SERVER_PORT 22000		/* Porta do servidor HTTP */
+#define HTTP_SERVER_PORT 80		/* Porta do servidor HTTP */
 #define MAX_PENDING_CONNECTIONS 50	/* Máximo de conexões pendentes no servidor HTTP */
 
 #endif

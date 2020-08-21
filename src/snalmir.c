@@ -1,7 +1,7 @@
 /*
  *
  * Licença: GPLv3
- * Autor: theskytalos
+ * Autor: callixtvs
  * Data: Julho de 2020
  * Arquivo: snalmir.c
  * Descrição: Arquivo principal do servidor, onde se encontra o entry point da aplicação.

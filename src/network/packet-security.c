@@ -1,6 +1,6 @@
 /*
  * Licença: GPLv3
- * Autor: theskytalos
+ * Autor: callixtvs
  * Data: Julho de 2020
  * Arquivo: network/packet-security.c
  * Descrição: Módulo onde é feita a criptografia e descriptografia dos packets enviados 
