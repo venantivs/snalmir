@@ -28,7 +28,8 @@ int main(void)
 	if ((errno = pthread_create(&main_server_thread, NULL, init_server, NULL)) != 0)
 		fatal_error("pthread_create");
 
-	pthread_join(http_server_thread, NULL);
+	if (HTTP_SERVER_ENABLED)
+		pthread_join(http_server_thread, NULL);
 	pthread_join(main_server_thread, NULL);
 
 	return EXIT_SUCCESS;
