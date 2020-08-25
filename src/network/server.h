@@ -15,6 +15,5 @@ extern unsigned long current_time;
 extern int current_weather;
 
 void* init_server();
-void start_server();
 
 #endif

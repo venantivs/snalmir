@@ -8,17 +8,18 @@
  */
 
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdbool.h>
 #include <errno.h>
 #include <unistd.h>
 #include <signal.h>
+#include <fcntl.h>
 
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
+#include <sys/epoll.h>
 #include <sys/time.h>
 
 #include "../core/utils.h"
@@ -35,6 +36,8 @@ int current_weather;
 
 int sec_counter = 0;
 int min_counter = 0;
+
+static void start_server();
 
 static void min_timer()
 {
@@ -82,103 +85,130 @@ void* init_server()
 	return NULL;
 }
 
-void start_server()
+static void epoll_ctl_add(int epfd, int fd, uint32_t events)
 {
-    	int master_socket_fd, new_socket, client_socket[MAX_USERS_PER_CHANNEL], bytes_read;
-	int max_sd;
-    	struct sockaddr_in server_address;
-     
-        unsigned char buffer[1025];
-     
-    	// Set of socket descriptors.
-    	fd_set readfds;
-     
-    	for (size_t i = 0; i < MAX_USERS_PER_CHANNEL; i++) 
-        	client_socket[i] = 0;
-     
-    	if((master_socket_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) 
-        	fatal_error("socket");
- 
-    	// Set master socket to allow multiple connections.
-    	if(setsockopt(master_socket_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0)
-		fatal_error("setsocketopt");
- 
-    	server_address.sin_family = AF_INET;
-    	server_address.sin_addr.s_addr = INADDR_ANY;
-    	server_address.sin_port = htons(SERVER_PORT);
-     
-    	if (bind(master_socket_fd, (struct sockaddr*) &server_address, sizeof(server_address)) < 0) 
-		fatal_error("bind");
-	
-    	if (listen(master_socket_fd, 3) < 0)
-    		fatal_error("listen");
-    
-	while(true)
-    	{
-        	FD_ZERO(&readfds);
-        	FD_SET(master_socket_fd, &readfds);
+        struct epoll_event ev;
 
-		max_sd = master_socket_fd;
-		
-        	// Add child sockets to set
-        	for (size_t i = 0; i < MAX_USERS_PER_CHANNEL; i++) 
-        	{
-			// If valid socket descriptor then add to read list
-			if(client_socket[i] > 0)
-				FD_SET(client_socket[i], &readfds);
-            
-            		// Highest file descriptor number, need it for the select function
-            		if(client_socket[i] > max_sd)
-				max_sd = client_socket[i];
-        	}
- 
-        	// Wait for an activity on one of the sockets, timeout is NULL, so wait indefinitely
-        	if (select(max_sd + 1, &readfds, NULL, NULL, NULL) < 0)
-			perror("select");
-   
-        	if (errno != EINTR) 
-            		perror("select");
-         
-        	// If something happened on the master socket, then its an incoming connection
-        	if (FD_ISSET(master_socket_fd, &readfds)) 
-        	{
-            		if ((new_socket = accept(master_socket_fd, (struct sockaddr*) &server_address, (socklen_t*) sizeof(server_address))) < 0)
-            			fatal_error("accept");
-         
-            		printf("New connection, socket fd is %d, ip is: %s, port: %d\n", new_socket, inet_ntoa(server_address.sin_addr), ntohs(server_address.sin_port));
-       
-            		// Add new socket to array of sockets
-            		for (size_t i = 0; i < MAX_USERS_PER_CHANNEL; i++) 
-            		{
-				if(client_socket[i] == 0)
-                		{
-                    			client_socket[i] = new_socket;
-					break;
-                		}
-            		}
-        	}
-         
-        	// Else its some IO operation on some other socket
-        	for (size_t i = 0; i < MAX_USERS_PER_CHANNEL; i++) 
-        	{
-            		if (FD_ISSET(client_socket[i], &readfds)) 
-            		{
-                		// Check if it was for closing, and also read the incoming message
-                		if ((bytes_read = recv(client_socket[i], buffer, 1024, 0)) == 0)
-                		{
-                    			// Somebody disconnected, get his details and print
-                    			getpeername(client_socket[i], (struct sockaddr*) &server_address, (socklen_t*) sizeof(server_address));
-                    			printf("Host disconnected, ip %s, port %d\n", inet_ntoa(server_address.sin_addr), ntohs(server_address.sin_port));
-                    			close(client_socket[i]);
-                    			client_socket[i] = 0;
-                		}
-                		else
-                		{
-					for (size_t j = 0; j < bytes_read; j++)
-						printf("%hhx ", buffer[j]);
-					printf("\n");
-                		}
-            		}
-        	}
-    	}
+        ev.events = events;
+        ev.data.fd = fd;
+
+        if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev) == -1)
+		fatal_error("epoll_ctl add");
+}
+
+static void set_non_blocking(int socket_fd)
+{
+	int opts;
+
+	if ((opts = fcntl(socket_fd, F_GETFL, 0)) == -1)
+		fatal_error("fcntl get");
+
+        if (fcntl(socket_fd, F_SETFL, opts | O_NONBLOCK) == -1)
+                fatal_error("fcntl set");
+}
+
+static void start_server()
+{
+        int listen_socket_fd, connection_socket_fd, epfd, nfds, bytes_read;
+        char buffer[1024];
+        struct sockaddr_in server_address, client_address;
+        struct epoll_event events[MAX_USERS_PER_CHANNEL];
+        socklen_t client_length;
+
+        if ((epfd = epoll_create(256)) == -1)
+		fatal_error("epoll_create");
+
+        if ((listen_socket_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+		fatal_error("socket");
+
+        set_non_blocking(listen_socket_fd);
+
+	epoll_ctl_add(epfd, listen_socket_fd, EPOLLIN | EPOLLET);	
+
+        memset(&server_address, 0, sizeof(server_address));
+        server_address.sin_family = AF_INET;
+	server_address.sin_addr.s_addr = INADDR_ANY;
+        server_address.sin_port = htons(SERVER_PORT);
+
+        if (bind(listen_socket_fd, (struct sockaddr *) &server_address, sizeof(server_address)) == -1)
+		fatal_error("bind");
+        
+	if (listen(listen_socket_fd, 16) == -1)
+		fatal_error("listen");
+
+        while (true)
+	{
+                if ((nfds = epoll_wait(epfd, events, 20, 500)) == -1)
+			fatal_error("epoll_wait");
+                
+		for (size_t i = 0; i < nfds; ++i)
+		{
+			if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP) || (!(events[i].events & EPOLLIN)))
+			{
+				close(events[i].data.fd);
+				continue;
+			}
+                        else if (events[i].data.fd == listen_socket_fd)
+			{
+				while (true)
+				{
+					if ((connection_socket_fd = accept(listen_socket_fd, (struct sockaddr *) &client_address, &client_length)) == -1)
+					{
+						if ((errno == EAGAIN) || (errno == EWOULDBLOCK))
+							break;
+						else
+						{
+							perror("accept");
+							break;	
+						}
+					}
+
+					
+					char *str = inet_ntoa(client_address.sin_addr);
+                                	printf("Accepted connection on fd %d, host %s\n", connection_socket_fd, str);
+
+					set_non_blocking(connection_socket_fd);
+
+					epoll_ctl_add(epfd, connection_socket_fd, EPOLLIN | EPOLLET);
+				}
+
+				continue;
+			}
+                        else if(events[i].events & EPOLLIN)
+			{
+				bool done = false;
+
+				while (true) {
+					memset(buffer, 0, sizeof(buffer));
+					
+					if ((bytes_read = read(events[i].data.fd, buffer, sizeof(buffer))) == -1)
+					{
+						if (errno != EAGAIN)
+						{
+							perror("read");
+							done = true;
+						}
+
+						break;
+					} 
+					else if (bytes_read == 0)
+					{
+						done = true;
+						break;
+					}
+
+					write(1, buffer, bytes_read);
+				}
+
+				if (done)
+				{
+					printf("Closed connection on fd %d.\n", events[i].data.fd);
+
+					close(events[i].data.fd);
+				}
+                        }
+                }
+        }
+
+	close(listen_socket_fd);
 }
