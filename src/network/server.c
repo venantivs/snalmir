@@ -4,7 +4,7 @@
  * Data: Julho de 2020
  * Arquivo: network/server.c
  * Descrição: Arquivo onde o servidor principal é propriamente inicializado, recebe e envia pacotes.
- * TODO: Atomizar start_server(). Implementar epoll(7).
+ * TODO: Implement rigorous error handling.
  */
 
 #include <stdio.h>
