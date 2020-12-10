@@ -1,3 +1,8 @@
+/*
+ * Commentaries with (USELESS) are PROBABLY useless declarations for this server project, as this file is basically copied from another server's base definitions file.
+ * Therefore, those should be CALMLY revaluated as the project goes on.
+ */
+
 #ifndef __BASE_DEF_H__
 #define __BASE_DEF_H__
 
@@ -70,43 +75,43 @@
 #define NUMERICA_SESSION2       34
 #define GAME_SESSION            64
 
-//SOCKETS INDEX
+/* Sockets Index (USELESS) */
 #define	SERVER_ID               0
 #define	DATABASE_ID             1
 
-//SIZE AND TYPES SERVER
+/* Size and Types Server */
 #define	BASE_CHARACTER          0
 #define	BASE_MOB                1000
 
-//ACTION
+/* Actions */
 #define	ACTION_MOVE		0
 #define	ACTION_MOVE_RAND	1
 #define	ACTION_BATTLE		2
 #define	ACTION_MOVE_TO_SUMMONER	3
 #define	NO_MORE_ACTION          -1
 
-//SPAWN TYPES
-#define	SPAWN_NORMAL            0 // Somente aparece
-#define	SPAWN_TELEPORT          2 // Efeito usado quando o personagem nasce ou eh teleportado
-#define	SPAWN_BABYGEN           10 // Efeito de quando uma cria nasce (75x only)
+/* Spawn Types */
+#define	SPAWN_NORMAL            0	/* Somente aparece */
+#define	SPAWN_TELEPORT          2	/* Efeito usado quando o personagem nasce ou e teleportado */
+#define	SPAWN_BABYGEN           10	/* Efeito de quando uma cria nasce (75x only) */
 
-//DELETE MOB TYPES
-#define	DELETE_NORMAL           0 // Somente desaparece
-#define	DELETE_DEAD             1 // Animacao da morte do spawn
-#define	DELETE_DISCONNECT       2 // Efeito de quando o personagem sai do jogo
-#define	DELETE_UNSPAWN          3 // Efeito quando os monstros ancts somem
+/* Delete  Mob Types */
+#define	DELETE_NORMAL           0	/* Somente desaparece */
+#define	DELETE_DEAD             1	/* Animacao da morte do spawn */
+#define	DELETE_DISCONNECT       2	/* Efeito de quando o personagem sai do jogo */
+#define	DELETE_UNSPAWN          3	/* Efeito quando os monstros ancts somem */
 
-//MOVE TYPES
+/* Move Types */
 #define	ROUTE_NORMAL            0
 #define	MOVE_NORMAL             0
 #define	MOVE_TELEPORT           1
 
-//TYPE SLOTS
+/* Slot Types */
 #define	EQUIP_TYPE              0
 #define	INV_TYPE                1
 #define	STORAGE_TYPE            2
 
-//EQUIP SLOTS
+/* Equipment Slots */
 #define	FACE_SLOT               0
 #define	HELM_SLOT               1
 #define	ARMA1_SLOT              6
@@ -115,28 +120,28 @@
 #define	PET_SLOT		13
 #define	CAPE_SLOT               15
 
-//CITY ID
+/* Cities */
 #define	ARMIA                   1
 #define	ERION                   2
 #define	AZRAN                   3
 #define	NOATUN                  4
 #define	GELO                    5
 
-//Classes
+/* Classes */
 #define	TRANSKNIGHT		0
 #define	FOEMA			1
 #define	BEASTMASTER		2
 #define	HUNTRESS		3
 
-//STATUS MASTERYS
+/* Status Masterys (???) */
 #define	WYD_fMaster             5
 #define	WYD_sMaster             10
 #define	WYD_tMaster             15
 
-//DELAY DE MOVIMENTO
+/* Movement Delay */
 #define	AI_DELAY_MOVIMENTO      2000
 
-//Quests
+/* Quests */
 #define	QUEST_C_ARMIA_1         1
 #define	QUEST_C_ARMIA_2         2
 #define	QUEST_C_ARMIA_3         3
@@ -148,28 +153,28 @@
 #define	QUEST_CELE_LV90		9
 #define	QUEST_CREATE_ARCH	10
 
-//INDEX DAS EVOLUCOES DE CLASSES
+/* Class Evolution */
 #define	CLASS_MORTAL            1
 #define	CLASS_ARCH              2
 #define	CLASS_CELESTIAL         3
 #define	CLASS_SUB_CELESTIAL     4
 #define	CLASS_HARDCORE          5
 
-//MUTAÇÂO MASTER
+/* BeastMaster Mutations */
 #define	LOBISOMEM               1
 #define	URSO                    2
 #define	ASTAROTH                3
 #define	TITA                    4
 #define	EDEN                    5
 
-//MUTAÇÂO FACES
+/* BeastMaster Mutation Faces */
 #define LOBISOMEM_FACE          22
 #define URSO_FACE               23
 #define ASTAROTH_FACE           24
 #define TITA_FACE               25
 #define EDEN_FACE               32
 
-//BUFS INDEX
+/* Buffs */
 #define LENTIDAO                1
 #define FM_VELOCIDADE           2
 #define RESISTENCIA_N           3
@@ -209,7 +214,7 @@
 #define HT_TROCAESP             38
 #define BAU_EXP                 39
 
-//EVOCAÇOES & MONTARIAS
+/* Evocations and Mounts */
 #define CONDOR                  0
 #define JAVALI                  1
 #define LOBO                    2
@@ -255,7 +260,7 @@
 #define p39x_CRITICO            2
 #define p39x_D_CRITICO          3 // Divide o atk em 2
 #define p39x_DANO_INVISIVEL     4
-#define p39x_DANO_ADMIN         5 // Confirmar, mas o dano almenta absurdamente
+#define p39x_DANO_ADMIN         5 // Confirmar, mas o dano aumenta absurdamente
 #define p39x_DANO_ADMIN_CRIT    7
 #define p39x_SUPER              8 //Atck com aquele shok de ARCH+
 #define p39x_D_SUPER            9
@@ -281,11 +286,9 @@
 
 // Estruturas Base
 
-struct item_st
-{
+struct item_st {
 	short item_id;
-	struct
-	{
+	struct {
 		unsigned char index;
 		unsigned char value;
 	} effect[3];
@@ -298,22 +301,19 @@ struct item_st
 #define EF3             effect[2].index
 #define EFV3            effect[2].value
 
-struct position_st
-{
+struct position_st {
 	short X;
 	short Y;
 };
 
-struct affect_st
-{
+struct affect_st {
 	unsigned char index;
 	unsigned char master;
 	short value;
 	unsigned time;
 };
 
-struct trade_st
-{
+struct trade_st {
 	struct item_st trade_item[15];
 	unsigned char trade_item_slot[15];
 	unsigned short other_client;
@@ -322,32 +322,29 @@ struct trade_st
 	bool waiting;
 };
 
-struct settings_st
-{
+struct settings_st {
 	int experience_rate;
 	int drop_rate;
 };
 
-struct guild_st
-{
-	short guild_id;		// Guild ID
-	char name[16];		// Nome da Guild
-	char leaders[4][16];	// [0] = Nome dono; [1], [2], [3] = Nome subdonos;
-	char nicks[50][16];	// Nomes dos membros
-	short city_own;		// Cidade da qual a Guild é dona
-	short ally_guild;	// Guild ID da guild aliada
-	short war_guild;	// Guild ID da guild rival
-	short member_count;	// Contagem de membros
-	int bet_armia;		// Valor apostado em Armia
-	int bet_erion;		// Valor apostado em Erion
-	int bet_azran;		// Valor apostado em Azran
-	int bet_nippleheim;	// Valor apostado em Nippleheim (Gelo)
-	int reputation;		// Attack bstatus de todos os membros da Guild
-	int cape_color;		// Cor da capa; 0 = NULL; 1 = Blue; 2 = Red; 3 = Andarilho
+struct guild_st {
+	short guild_id;		/* Guild ID */
+	char name[16];		/* Nome da Guild */
+	char leaders[4][16];	/* [0] = Nome dono; [1], [2], [3] = Nome subdonos; */
+	char nicks[50][16];	/* Nomes dos membros */
+	short city_own;		/* Cidade da qual a Guild é dona */
+	short ally_guild;	/* Guild ID da guild aliada */
+	short war_guild;	/* Guild ID da guild rival */
+	short member_count;	/* Contagem de membros */
+	int bet_armia;		/* Valor apostado em Armia */
+	int bet_erion;		/* Valor apostado em Erion */
+	int bet_azran;		/* Valor apostado em Azran */
+	int bet_nippleheim;	/* Valor apostado em Nippleheim (Gelo) */
+	int reputation;		/* Attack bstatus de todos os membros da Guild */
+	int cape_color;		/* Cor da capa; 0 = NULL; 1 = Blue; 2 = Red; 3 = Andarilho */
 };
 
-struct guild_file_st
-{
+struct guild_file_st {
 	int channel;
 	int city_own;
 	int guild_id;
@@ -355,8 +352,7 @@ struct guild_file_st
 	char sub_owners[3][12];
 };
 
-struct market_st
-{
+struct market_st {
 	char title[27];
 	struct item_st item[12];
 	unsigned char slot[12];
@@ -365,8 +361,7 @@ struct market_st
 	short index;
 };
 
-struct pesadelo_st
-{
+struct pesadelo_st {
 	int group[3];
 	int time[3];
 	struct position_st teleport[3];
@@ -378,16 +373,14 @@ struct pesadelo_st
 	int status[3];
 };
 
-struct mount_info_st
-{
+struct mount_info_st {
 	int damage;
 	int magic;
 	int evasion;
 	int immunity;
 };
 
-struct cubo_file_st
-{
+struct cubo_file_st {
 	int sala[25];
 	int current_question[25];
 	int mobs[25];
@@ -399,8 +392,7 @@ struct cubo_file_st
 	struct position_st X[25];
 };
 
-struct city_st
-{
+struct city_st {
 	char guild_name[16];
 	int guild_own;
 	int gold;
@@ -411,8 +403,7 @@ struct city_st
 	bool is_at_war;
 };
 
-struct city_manager_st
-{
+struct city_manager_st {
 	struct city_st armia;
 	struct city_st erion;
 	struct city_st azran;
@@ -420,8 +411,7 @@ struct city_manager_st
 	struct city_st nippleheim;
 };
 
-struct status_st
-{
+struct status_st {
 	unsigned short level;
 	short defense;
 	short attack;
@@ -447,27 +437,23 @@ struct status_st
 	unsigned char t_master;
 };
 
-struct duel_st
-{
+struct duel_st {
 	bool start;
 	int time;
 	int player_1;
 	int player_2;
 };
 
-struct mob_st
-{
+struct mob_st {
 	char name[16];
 	char cape;
-	struct
-	{
+	struct {
 		unsigned char merchant : 6;
 		unsigned char city_id : 2;
 	} info;
 	unsigned short guild_id;
 	unsigned char class_info;
-	struct
-	{
+	struct {
 		unsigned char slow_mov : 1;
 		unsigned char drain_hp : 1;
 		unsigned char vision_drop : 1;
@@ -510,8 +496,8 @@ struct mob_st
 	int cele_level;
 	unsigned int quest_info;
 	char guild_name[16];
-	int deed_time;				// Escritura
-	unsigned long long int deed_tick; 	// Escritura
+	int deed_time;				/* Escritura */
+	unsigned long long int deed_tick; 	/* Escritura */
 	char unknown[148];
 	struct position_st current;
 	struct position_st dest;
@@ -527,8 +513,7 @@ struct mob_st
 	char unknown2[50];
 };
 
-struct char_list_st
-{
+struct char_list_st {
 	short position_x[MOB_PER_ACCOUNT];
 	short position_y[MOB_PER_ACCOUNT];
 	char name[MOB_PER_ACCOUNT][16];
@@ -539,24 +524,21 @@ struct char_list_st
 	unsigned int experience[MOB_PER_ACCOUNT];
 };
 
-struct party_st
-{
+struct party_st {
 	short index;
 	short leader_id;
 	short players[MAX_PARTY];
 	short count;
 };
 
-struct teleport_st
-{
+struct teleport_st {
 	struct position_st from;
 	struct position_st to;
 	int price;
 	int func;
 };
 
-struct gener_position_st
-{
+struct gener_position_st {
 	short position_x;
 	short position_y;
 	short range;
@@ -564,8 +546,7 @@ struct gener_position_st
 	char action[96];
 };
 
-struct subcelestial_st
-{
+struct subcelestial_st {
 	struct status_st b_status;
 	unsigned char face;
 	unsigned char class_info;
@@ -582,8 +563,7 @@ struct subcelestial_st
 	struct affect_st affect[MAX_AFFECT];
 };
 
-struct ground_item_st
-{
+struct ground_item_st {
 	int item_index;
 	int owner_id;
 	struct item_st item_data;
@@ -594,20 +574,17 @@ struct ground_item_st
 	short position_y;
 };
 
-struct target_st
-{
+struct target_st {
 	short target_id;
 	short damage;
 };
 
-struct damage_st
-{
+struct damage_st {
 	short damage;
 	char double_critical;
 };
 
-struct npcgener_st
-{
+struct npcgener_st {
 	int mode;
 	int minute_generated;
 	int max_num_mob;
@@ -624,8 +601,7 @@ struct npcgener_st
 	struct mob_st mob;
 };
 
-struct itemlist_st
-{
+struct itemlist_st {
 	char name[MAX_SIZENAME];
 	short mesh_1;
 	short texture;
@@ -635,8 +611,7 @@ struct itemlist_st
 	short intelligence;
 	short dexterity;
 	short constitution;
-	struct
-	{
+	struct {
 		short index;
 		short value;
 	} effect [MAX_EFFECT];
@@ -647,23 +622,22 @@ struct itemlist_st
 	short grade;
 };
 
-struct skill_data_st
-{
-	int points; //0
-	int target; //4
-	int mana; //8
-	int delay; //12
-	int range; //16
-	int instance_type; //20
-	int instance_value; //24
-	int tick_type; //28
-	int tick_value; //32
-	int affect_type; //36
-	int affect_value; //40
-	int time; //44
-	char act_1[8]; //52
-	char act_2[8]; //60
-	int instance_attribute; //64
+struct skill_data_st {
+	int points; 		/* 0 */
+	int target; 		/* 4 */
+	int mana; 		/* 8 */
+	int delay; 		/* 12 */
+	int range; 		/* 16 */
+	int instance_type; 	/* 20 */
+	int instance_value; 	/* 24 */
+	int tick_type; 		/* 28 */
+	int tick_value; 	/* 32 */
+	int affect_type; 	/* 36 */
+	int affect_value; 	/* 40 */
+	int time; 		/* 44 */
+	char act_1[8]; 		/* 52 */
+	char act_2[8]; 		/* 60 */
+	int instance_attribute; /* 64 */
 	int tick_attribute;
 	int aggressive;
 	int max_target;
@@ -673,8 +647,7 @@ struct skill_data_st
 	int unknown;
 };
 
-struct guildzone_st
-{
+struct guildzone_st {
 	int owner_index;
 	int chall_index;
 	int area_guild_x, area_guild_y;

@@ -39,12 +39,14 @@ int min_counter = 0;
 
 static void start_server();
 
-static void min_timer()
+static void 
+min_timer()
 {
 	min_counter++;
 }
 
-static void sec_timer()
+static void
+sec_timer()
 {
 	sec_counter++;
 	current_time = (unsigned long) time(NULL);
@@ -53,7 +55,8 @@ static void sec_timer()
 		min_timer();
 }
 
-void* init_server()
+void
+*init_server()
 {
 	memset(users, 0, sizeof(struct user_server_st) * MAX_USERS_PER_CHANNEL);
 	memset(mobs, 0, sizeof(struct mob_server_st) * 30000);
@@ -85,29 +88,32 @@ void* init_server()
 	return NULL;
 }
 
-static void epoll_ctl_add(int epfd, int fd, uint32_t events)
+static void
+epoll_ctl_add(int epfd, int fd, uint32_t events)
 {
         struct epoll_event ev;
 
         ev.events = events;
         ev.data.fd = fd;
 
-        if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev) == -1)
+        if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev) < 0)
 		fatal_error("epoll_ctl add");
 }
 
-static void set_non_blocking(int socket_fd)
+static void
+set_non_blocking(int socket_fd)
 {
 	int opts;
 
-	if ((opts = fcntl(socket_fd, F_GETFL, 0)) == -1)
+	if ((opts = fcntl(socket_fd, F_GETFL, 0)) < 0)
 		fatal_error("fcntl get");
 
-        if (fcntl(socket_fd, F_SETFL, opts | O_NONBLOCK) == -1)
+        if (fcntl(socket_fd, F_SETFL, opts | O_NONBLOCK) < 0)
                 fatal_error("fcntl set");
 }
 
-static void start_server()
+static void
+start_server()
 {
         int listen_socket_fd, connection_socket_fd, epfd, nfds, bytes_read;
         char buffer[1024];
@@ -115,10 +121,10 @@ static void start_server()
         struct epoll_event events[MAX_USERS_PER_CHANNEL];
         socklen_t client_length;
 
-        if ((epfd = epoll_create(256)) == -1)
+        if ((epfd = epoll_create(256)) < 0)
 		fatal_error("epoll_create");
 
-        if ((listen_socket_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+        if ((listen_socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 		fatal_error("socket");
 
         set_non_blocking(listen_socket_fd);
@@ -130,39 +136,30 @@ static void start_server()
 	server_address.sin_addr.s_addr = INADDR_ANY;
         server_address.sin_port = htons(SERVER_PORT);
 
-        if (bind(listen_socket_fd, (struct sockaddr *) &server_address, sizeof(server_address)) == -1)
+        if (bind(listen_socket_fd, (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
 		fatal_error("bind");
         
-	if (listen(listen_socket_fd, 16) == -1)
+	if (listen(listen_socket_fd, 16) < 0)
 		fatal_error("listen");
 
-        while (true)
-	{
-                if ((nfds = epoll_wait(epfd, events, 20, 500)) == -1)
+        while (true) {
+                if ((nfds = epoll_wait(epfd, events, 20, 500)) < 0)
 			fatal_error("epoll_wait");
                 
-		for (size_t i = 0; i < nfds; ++i)
-		{
-			if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP) || (!(events[i].events & EPOLLIN)))
-			{
+		for (size_t i = 0; i < nfds; ++i) {
+			if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP) || (!(events[i].events & EPOLLIN))) {
 				close(events[i].data.fd);
 				continue;
-			}
-                        else if (events[i].data.fd == listen_socket_fd)
-			{
-				while (true)
-				{
-					if ((connection_socket_fd = accept(listen_socket_fd, (struct sockaddr *) &client_address, &client_length)) == -1)
-					{
+			} else if (events[i].data.fd == listen_socket_fd) {
+				while (true) {
+					if ((connection_socket_fd = accept(listen_socket_fd, (struct sockaddr *) &client_address, &client_length)) < 0) {
 						if ((errno == EAGAIN) || (errno == EWOULDBLOCK))
 							break;
-						else
-						{
+						else {
 							perror("accept");
 							break;	
 						}
 					}
-
 					
 					char *str = inet_ntoa(client_address.sin_addr);
                                 	printf("Accepted connection on fd %d, host %s\n", connection_socket_fd, str);
@@ -173,26 +170,20 @@ static void start_server()
 				}
 
 				continue;
-			}
-                        else if(events[i].events & EPOLLIN)
-			{
+			} else if(events[i].events & EPOLLIN) {
 				bool done = false;
 
 				while (true) {
 					memset(buffer, 0, sizeof(buffer));
 					
-					if ((bytes_read = read(events[i].data.fd, buffer, sizeof(buffer))) == -1)
-					{
-						if (errno != EAGAIN)
-						{
+					if ((bytes_read = read(events[i].data.fd, buffer, sizeof(buffer))) < 0) {
+						if (errno != EAGAIN) {
 							perror("read");
 							done = true;
 						}
 
 						break;
-					} 
-					else if (bytes_read == 0)
-					{
+					}  else if (bytes_read == 0) {
 						done = true;
 						break;
 					}
@@ -200,8 +191,7 @@ static void start_server()
 					write(1, buffer, bytes_read);
 				}
 
-				if (done)
-				{
+				if (done) {
 					printf("Closed connection on fd %d.\n", events[i].data.fd);
 
 					close(events[i].data.fd);

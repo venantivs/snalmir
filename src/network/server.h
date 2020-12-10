@@ -14,6 +14,6 @@ extern struct settings_st settings;
 extern unsigned long current_time;
 extern int current_weather;
 
-void* init_server();
+void	*init_server();
 
 #endif

@@ -32,8 +32,7 @@
 #define MOB_TYPE_PESA_BOSS	10
 #define MOB_TYPE_CUBO		11
 
-struct mob_server_st
-{
+struct mob_server_st {
 	struct mob_st mob;
 	int  mode;
 	clock_t next_action;

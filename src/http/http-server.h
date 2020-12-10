@@ -14,6 +14,6 @@ struct request
 	char host[256];
 };
 
-void* init_http_server();
+void	*init_http_server();
 
 #endif

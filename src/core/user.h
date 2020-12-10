@@ -6,8 +6,7 @@
 
 #include "../core/base-def.h"
 
-struct user_server_data_st
-{
+struct user_server_data_st {
 	int socket_fd;
 	unsigned ip;
 	unsigned mac[4];
@@ -18,8 +17,7 @@ struct user_server_data_st
 	int timer_close;
 };
 
-struct user_server_st
-{
+struct user_server_st {
 	char account_name[16];
 	struct item_st storage[128];
 	struct market_st market_info;
@@ -33,5 +31,8 @@ struct user_server_st
 	int last_attack;
 	struct user_server_data_st server_data;
 };
+
+bool	create_account(const char *, const char *);
+bool	delete_account(const char *, const char *);
 
 #endif

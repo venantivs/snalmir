@@ -5,8 +5,7 @@
 
 #define LOGIN_OPERATION_CODE 0x20D
 
-struct packet_header
-{
+struct packet_header {
 	short size;
 	char key;
 	char checksum;
@@ -15,8 +14,7 @@ struct packet_header
 	unsigned time;
 };
 
-struct packet_request_login
-{
+struct packet_request_login {
 	struct packet_header header;
 	char name[16];
 	char password[12];
@@ -33,14 +31,12 @@ struct packet_request_numeric_password {
 	int change_numeric;
 };
 
-struct packet_request_logout
-{
+struct packet_request_logout {
 	struct packet_header header;
 	int session;
 };
 
-struct packet_char_list
-{
+struct packet_char_list {
 	struct packet_header header;
 	struct char_list_st sel_list;
 	struct item_st storage[MAX_STORAGE];
@@ -51,22 +47,19 @@ struct packet_char_list
 	int unknown;
 };
 
-struct packet_request_create_char
-{
+struct packet_request_create_char {
 	struct packet_header header;
 	int slot_index;
 	char name[16];
 	int class_index;
 };
 
-struct packet_create_char
-{
+struct packet_create_char {
 	struct packet_header header;
 	struct char_list_st sel_list;
 };
 
-struct packet_create_sub
-{
+struct packet_create_sub {
 	struct packet_header header;
 	char name[16];
 	int sub_class;
@@ -74,22 +67,19 @@ struct packet_create_sub
 	int cythera;
 };
 
-struct packet_request_delete_char
-{
+struct packet_request_delete_char {
 	struct packet_header header;
 	int slot_index;
 	char name[16];
 	char password[12];
 };
 
-struct packet_delete_char
-{
+struct packet_delete_char {
 	struct packet_header header;
 	struct char_list_st sel_list;
 };
 
-struct packet_request_enter_world
-{
+struct packet_request_enter_world {
 	struct packet_header header;
 	short guild_id;
 	char guild_name[16];
@@ -100,8 +90,7 @@ struct packet_request_enter_world
 	unsigned char error;
 };
 
-struct packet_enter_world
-{
+struct packet_enter_world {
 	struct packet_header header;
 	struct position_st position;
 	struct mob_st character;

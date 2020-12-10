@@ -9,6 +9,7 @@
 #include "packet-def.h"
 #include "packet-handler.h"
 
-void packet_segregate(unsigned char* packet_buffer[])
+void
+packet_segregate(unsigned char *packet_buffer)
 {
 } 

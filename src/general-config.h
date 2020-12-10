@@ -16,7 +16,7 @@
 #define CHANNEL_COUNT 1			/* Número de canais abertos (MAX 8) */
 
 // HTTP Config
-#define HTTP_SERVER_ENABLED 0		/* Caso 0, o servidor HTTP não será inicializado */
+#define HTTP_SERVER_ENABLED 1		/* Caso 0, o servidor HTTP não será inicializado */
 #define HTTP_SERVER_PORT 80		/* Porta do servidor HTTP */
 #define MAX_PENDING_CONNECTIONS 50	/* Máximo de conexões pendentes no servidor HTTP */
 

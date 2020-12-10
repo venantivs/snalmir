@@ -45,23 +45,22 @@ const static unsigned char key_table[] = {
 				0xD7, 0x8F, 0x05, 0x7D, 0x0D, 0x34, 0x8F, 0x7D, 0xAD, 0x87, 0xE9, 0x7C, 0x85, 0x80, 0x85, 0x79,
 				0x8A, 0xC3, 0xE7, 0xA5, 0xE8, 0x6B, 0x0D, 0x74, 0x10, 0x73, 0x33, 0x17, 0x0D, 0x37, 0x21, 0x19 };
 
-void encrypt(unsigned char* packet_buffer[])
+void
+encrypt(unsigned char *packet_buffer[])
 {
 	unsigned char checksum_enc = 0, checksum_dec = 0;
 	unsigned char key_result = 0;
 	unsigned int key_increment = (unsigned)(key_table[(*packet_buffer)[2] * 2] & 0xFF);
 
-	for (size_t i = 4; i < ((*packet_buffer)[1] << 8) + (*packet_buffer)[0]; i++, key_increment++)
-	{
+	for (size_t i = 4; i < ((*packet_buffer)[1] << 8) + (*packet_buffer)[0]; i++, key_increment++) {
 		checksum_dec += (*packet_buffer)[i];
 		key_result = key_table[((key_increment & 0x800000FF) * 2) + 1];
 		
-		switch (i & 3)
-		{
-			case 0: (*packet_buffer)[i] += (unsigned char)(key_result * 2); break;
-			case 1: (*packet_buffer)[i] -= (unsigned char)(key_result >> 3); break;
-			case 2: (*packet_buffer)[i] += (unsigned char)(key_result * 4); break;
-			case 3: (*packet_buffer)[i] -= (unsigned char)(key_result >> 5); break;
+		switch (i & 3) {
+		case 0: (*packet_buffer)[i] += (unsigned char)(key_result * 2); break;
+		case 1: (*packet_buffer)[i] -= (unsigned char)(key_result >> 3); break;
+		case 2: (*packet_buffer)[i] += (unsigned char)(key_result * 4); break;
+		case 3: (*packet_buffer)[i] -= (unsigned char)(key_result >> 5); break;
 		}
 
 		checksum_enc += (*packet_buffer)[i];
@@ -70,23 +69,22 @@ void encrypt(unsigned char* packet_buffer[])
 	(*packet_buffer)[3] = (unsigned char)(checksum_enc - checksum_dec);
 }
 
-int decrypt(unsigned char* packet_buffer[])
+int
+decrypt(unsigned char* packet_buffer[])
 {
 	unsigned char checksum_enc = 0, checksum_dec = 0;
 	unsigned char key_result = 0;
 	unsigned int key_increment = key_table[(*packet_buffer)[2] * 2];
 
-	for (size_t i = 4; i < ((*packet_buffer)[1] << 8) + (*packet_buffer)[0]; i++, key_increment++)
-	{
+	for (size_t i = 4; i < ((*packet_buffer)[1] << 8) + (*packet_buffer)[0]; i++, key_increment++) {
 		checksum_enc += (*packet_buffer)[i];
 		key_result = key_table[((key_increment & 0x800000F) * 2) + 1];
 
-		switch (i & 3)
-		{
-			case 0: (*packet_buffer)[i] -= (unsigned char)(key_result << 1); break;
-			case 1: (*packet_buffer)[i] += (unsigned char)(key_result >> 3); break;
-			case 2: (*packet_buffer)[i] -= (unsigned char)(key_result << 2); break;
-			case 3: (*packet_buffer)[i] += (unsigned char)(key_result >> 5); break;
+		switch (i & 3) {
+		case 0: (*packet_buffer)[i] -= (unsigned char)(key_result << 1); break;
+		case 1: (*packet_buffer)[i] += (unsigned char)(key_result >> 3); break;
+		case 2: (*packet_buffer)[i] -= (unsigned char)(key_result << 2); break;
+		case 3: (*packet_buffer)[i] += (unsigned char)(key_result >> 5); break;
 		}
 
 		checksum_dec += (*packet_buffer)[i];
