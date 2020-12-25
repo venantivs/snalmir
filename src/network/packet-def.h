@@ -7,8 +7,8 @@
 
 struct packet_header {
 	short size;
-	char key;
-	char checksum;
+	unsigned char key;
+	unsigned char checksum;
 	short operation_code;
 	short index;
 	unsigned time;

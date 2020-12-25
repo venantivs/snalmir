@@ -112,6 +112,15 @@ set_non_blocking(int socket_fd)
                 fatal_error("fcntl set");
 }
 
+static int
+get_user_index_from_socket(int socket_fd)
+{
+	/* Implementação burra, adiciona complexidade O(n) desnecessária a cada iteração do servidor. */
+	for (size_t i = 0; i < MAX_USERS_PER_CHANNEL; i++)
+		if (users[i].server_data.socket_fd == socket_fd)
+			return i;
+}
+
 static void
 start_server()
 {
@@ -170,11 +179,24 @@ start_server()
 				}
 
 				continue;
-			} else if(events[i].events & EPOLLIN) {
+			} else if (events[i].events & EPOLLIN) {
 				bool done = false;
 
 				while (true) {
-					memset(buffer, 0, sizeof(buffer));
+					/* AQUI É QUE ONDE O PAU QUEBRA */
+
+					int user_index = get_user_index_from_socket(events[i].data.fd);
+
+					/* No Linux, creio que em BSDs também, descritores de arquivo 0, 1 e 2 são reservados pelo sistema. */
+					if (user_index < 3) {
+						fprintf(stderr, "Descritor de arquivo inválido. (<3)\n");
+						done = true;
+						break;
+					}
+
+
+
+					/*memset(buffer, 0, sizeof(buffer));
 					
 					if ((bytes_read = read(events[i].data.fd, buffer, sizeof(buffer))) < 0) {
 						if (errno != EAGAIN) {
@@ -188,7 +210,7 @@ start_server()
 						break;
 					}
 
-					write(1, buffer, bytes_read);
+					write(1, buffer, bytes_read);*/
 				}
 
 				if (done) {

@@ -8,7 +8,7 @@ CFLAGS = -Wall
 .PHONY: default all clean
 
 default: $(TARGET)
-all: default
+all: dir default
 
 SOURCE = $(shell find . -name *.c)
 HEADERS = $(shell find . -name *.h)
@@ -21,6 +21,9 @@ OBJECTS = $(patsubst %.c, %.o, $(SOURCE))
 
 $(TARGET): $(OBJECTS)
 	$(CC) $(OBJECTS) -Wall $(LIBS) -o bin/$@
+
+dir:
+	mkdir -p bin/
 
 clean:
 	-rm -f $(OBJECTS)

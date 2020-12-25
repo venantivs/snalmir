@@ -10,14 +10,20 @@
 #ifndef __GENERAL_CONFIG_H__
 #define __GENERAL_CONFIG_H__
 
-// Server Config
-#define SERVER_PORT 8281		/* Porta do servidor. 8281 para Malech. */
-#define MAX_USERS_PER_CHANNEL 500	/* Máximo de usuários por canal */
-#define CHANNEL_COUNT 1			/* Número de canais abertos (MAX 8) */
+/* Configuração do servidor */
+#define SERVER_PORT 8281		/* Porta do servidor. 8281 para Malech (?). */
+#define MAX_USERS_PER_CHANNEL 500	/* Máximo de usuários por canal. */
+#define CHANNEL_COUNT 1			/* Número de canais abertos (MAX 8). */
+#define CLIENT_VERSION 754		/* Não tenho certeza se da 754 pra 755 só muda a CLIVER. */
+#define MAX_PENDING_CONNECTIONS 12	/* Máximo de conexões pendentes no servidor. */
 
-// HTTP Config
-#define HTTP_SERVER_ENABLED 1		/* Caso 0, o servidor HTTP não será inicializado */
-#define HTTP_SERVER_PORT 80		/* Porta do servidor HTTP */
-#define MAX_PENDING_CONNECTIONS 50	/* Máximo de conexões pendentes no servidor HTTP */
+/* Configuração do servidor HTTP */
+#define HTTP_SERVER_ENABLED 1		/* Caso 0, o servidor HTTP não será inicializado. */
+#define HTTP_SERVER_PORT 80		/* Porta do servidor HTTP. */
+#define HTTP_MAX_PENDING_CONNECTIONS 50	/* Máximo de conexões pendentes no servidor HTTP. */
+
+/* Configurações de rede */
+#define RECV_BUFFER_SIZE (128 * 1024)	/* Tamanho do buffer das mensagens recebidas do cliente. */
+#define SEND_BUFFER_SIZE (128 * 1024)	/* Tamanho do buffer das mensagens enviadas ao cliente. */
 
 #endif

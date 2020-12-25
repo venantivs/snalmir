@@ -50,7 +50,7 @@ init_http_server()
 	if (bind(master_socket_fd, (struct sockaddr*) &serv_addr, sizeof(serv_addr)) < 0)
 		fatal_error("bind");
 
-	if (listen(master_socket_fd, 10) < 0)
+	if (listen(master_socket_fd, HTTP_MAX_PENDING_CONNECTIONS) < 0)
 		fatal_error("listen");
 
 	while (true) {

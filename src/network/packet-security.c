@@ -46,7 +46,7 @@ const static unsigned char key_table[] = {
 				0x8A, 0xC3, 0xE7, 0xA5, 0xE8, 0x6B, 0x0D, 0x74, 0x10, 0x73, 0x33, 0x17, 0x0D, 0x37, 0x21, 0x19 };
 
 void
-encrypt(unsigned char *packet_buffer[])
+encrypt(unsigned char* packet_buffer[])
 {
 	unsigned char checksum_enc = 0, checksum_dec = 0;
 	unsigned char key_result = 0;
