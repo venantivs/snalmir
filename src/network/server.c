@@ -2,9 +2,10 @@
  * Licença: GPLv3
  * Autor: callixtvs
  * Data: Julho de 2020
+ * Atualização: Dezembro de 2020
  * Arquivo: network/server.c
  * Descrição: Arquivo onde o servidor principal é propriamente inicializado, recebe e envia pacotes.
- * TODO: Implement rigorous error handling.
+ * TODO: Implementar error handling muito rigoroso.
  */
 
 #include <stdio.h>
@@ -23,10 +24,14 @@
 #include <sys/time.h>
 
 #include "../core/utils.h"
+#include "../core/user.h"
+#include "socket-utils.h"
+#include "packet-handler.h"
 #include "../general-config.h"
 #include "server.h"
 
 struct user_server_st users[MAX_USERS_PER_CHANNEL];
+struct user_server_st temp_user;
 struct mob_server_st mobs[30000];
 struct ground_item_st ground_items[4096];
 struct party_st parties[500];
@@ -59,6 +64,7 @@ void
 *init_server()
 {
 	memset(users, 0, sizeof(struct user_server_st) * MAX_USERS_PER_CHANNEL);
+	memset(&temp_user, 0, sizeof(struct user_server_st));
 	memset(mobs, 0, sizeof(struct mob_server_st) * 30000);
 	memset(ground_items, 0, sizeof(struct ground_item_st) * 4096);
 	memset(parties, -1, sizeof(struct party_st) * 500);
@@ -115,17 +121,43 @@ set_non_blocking(int socket_fd)
 static int
 get_user_index_from_socket(int socket_fd)
 {
-	/* Implementação burra, adiciona complexidade O(n) desnecessária a cada iteração do servidor. */
+	/* No Linux, creio que em BSDs também, descritores de arquivo 0, 1 e 2 são reservados pelo sistema. */
+	if (socket_fd < 3) {
+		fprintf(stderr, "Descritor de arquivo inválido. (<3)\n");
+		return -1;
+	}
+
+	/* Implementação burra, adiciona complexidade O(n) desnecessária a cada evento do epoll. */
 	for (size_t i = 0; i < MAX_USERS_PER_CHANNEL; i++)
 		if (users[i].server_data.socket_fd == socket_fd)
 			return i;
+
+	return -1;
+}
+
+static int
+get_empty_user(void)
+{
+	for (size_t i = 0; i < MAX_USERS_PER_CHANNEL; i++)
+		if (users[i].server_data.mode == USER_EMPTY)
+			return i;
+
+	return -1;
+}
+
+static void
+print_buffer(int user_index)
+{
+	for (size_t i = 0; i < 1024; i++)
+		printf("%hhx ", users[user_index].server_data.buffer.recv_buffer[i]);
+
+	printf("\n");
 }
 
 static void
 start_server()
 {
-        int listen_socket_fd, connection_socket_fd, epfd, nfds, bytes_read;
-        char buffer[1024];
+        int listen_socket_fd, connection_socket_fd, epfd, nfds;
         struct sockaddr_in server_address, client_address;
         struct epoll_event events[MAX_USERS_PER_CHANNEL];
         socklen_t client_length;
@@ -161,6 +193,15 @@ start_server()
 				continue;
 			} else if (events[i].data.fd == listen_socket_fd) {
 				while (true) {
+					int user_index = get_empty_user();
+
+					/* Checar se recv_buffer e send_buffer são NULL pode ser inútil uma vez que ambos são estáticos. */
+					if (user_index < 0 || user_index >= MAX_USERS_PER_CHANNEL || users[user_index].server_data.buffer.recv_buffer == NULL || users[user_index].server_data.buffer.send_buffer == NULL) {
+						/* DEU RUIM FILHO */
+						fprintf(stderr, "Não foi possível aceitar o usuário.\n");
+						continue;
+					}
+
 					if ((connection_socket_fd = accept(listen_socket_fd, (struct sockaddr *) &client_address, &client_length)) < 0) {
 						if ((errno == EAGAIN) || (errno == EWOULDBLOCK))
 							break;
@@ -170,50 +211,69 @@ start_server()
 						}
 					}
 					
-					char *str = inet_ntoa(client_address.sin_addr);
-                                	printf("Accepted connection on fd %d, host %s\n", connection_socket_fd, str);
+					char *ip_str = inet_ntoa(client_address.sin_addr);
 
 					set_non_blocking(connection_socket_fd);
 
 					epoll_ctl_add(epfd, connection_socket_fd, EPOLLIN | EPOLLET);
+
+					if (!accept_user(user_index, connection_socket_fd, client_address.sin_addr.s_addr, ip_str)) {
+						close(connection_socket_fd);
+						continue;
+					}
+
+					printf("Accepted connection on fd %d, host %s\n", connection_socket_fd, ip_str);
 				}
 
 				continue;
 			} else if (events[i].events & EPOLLIN) {
 				bool done = false;
 
+				int user_index = get_user_index_from_socket(events[i].data.fd);
+
+				if (user_index < 0) {
+					done = true;
+					break;
+				}
+
+				if (users[user_index].server_data.mode == USER_EMPTY) {
+					done = true;
+					break;
+				}
+
+				if (user_index > MAX_USERS_PER_CHANNEL) {
+					close_user(user_index);
+					done = true;
+					break;
+				}
+
+				if (!receive(user_index)) {
+					users[user_index].server_data.user_close = true;
+					done = true;
+					break;
+				}
+
+				unsigned char *message = NULL;
+
 				while (true) {
 					/* AQUI É QUE ONDE O PAU QUEBRA */
 
-					int user_index = get_user_index_from_socket(events[i].data.fd);
+					message = read_client_message(user_index);
 
-					/* No Linux, creio que em BSDs também, descritores de arquivo 0, 1 e 2 são reservados pelo sistema. */
-					if (user_index < 3) {
-						fprintf(stderr, "Descritor de arquivo inválido. (<3)\n");
+					if (message == NULL)
+						break;
+
+					if (!segregate_packet(message, user_index)) {
+						users[user_index].server_data.user_close = true;
 						done = true;
 						break;
 					}
-
-
-
-					/*memset(buffer, 0, sizeof(buffer));
-					
-					if ((bytes_read = read(events[i].data.fd, buffer, sizeof(buffer))) < 0) {
-						if (errno != EAGAIN) {
-							perror("read");
-							done = true;
-						}
-
-						break;
-					}  else if (bytes_read == 0) {
-						done = true;
-						break;
-					}
-
-					write(1, buffer, bytes_read);*/
 				}
 
 				if (done) {
+					if (user_index >= 0 && user_index < MAX_USERS_PER_CHANNEL)
+						users[user_index].server_data.mode = USER_EMPTY;
+
 					printf("Closed connection on fd %d.\n", events[i].data.fd);
 
 					close(events[i].data.fd);

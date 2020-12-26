@@ -26,6 +26,7 @@ struct user_server_buffering_st {
 struct user_server_data_st {
 	int socket_fd;
 	unsigned ip;
+	char ip_str[18];
 	unsigned mac[4];
 	enum user_mode mode;
 	int index;
@@ -52,5 +53,7 @@ struct user_server_st {
 
 bool	create_account(const char *, const char *);
 bool	delete_account(const char *, const char *);
+bool	accept_user(int, int, unsigned, char *);
+bool 	close_user(int);
 
 #endif

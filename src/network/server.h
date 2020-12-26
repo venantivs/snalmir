@@ -11,6 +11,9 @@ extern struct ground_item_st ground_items[4096];
 extern struct party_st parties[500];
 extern struct settings_st settings;
 
+extern int sec_counter;
+extern int min_counter;
+
 extern unsigned long current_time;
 extern int current_weather;
 
