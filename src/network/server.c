@@ -97,12 +97,12 @@ void
 static void
 epoll_ctl_add(int epfd, int fd, uint32_t events)
 {
-        struct epoll_event ev;
+	struct epoll_event ev;
 
-        ev.events = events;
-        ev.data.fd = fd;
+	ev.events = events;
+	ev.data.fd = fd;
 
-        if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev) < 0)
+	if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev) < 0)
 		fatal_error("epoll_ctl add");
 }
 
@@ -114,8 +114,8 @@ set_non_blocking(int socket_fd)
 	if ((opts = fcntl(socket_fd, F_GETFL, 0)) < 0)
 		fatal_error("fcntl get");
 
-        if (fcntl(socket_fd, F_SETFL, opts | O_NONBLOCK) < 0)
-                fatal_error("fcntl set");
+	if (fcntl(socket_fd, F_SETFL, opts | O_NONBLOCK) < 0)
+		fatal_error("fcntl set");
 }
 
 static int
@@ -123,11 +123,11 @@ get_user_index_from_socket(int socket_fd)
 {
 	/* No Linux, creio que em BSDs também, descritores de arquivo 0, 1 e 2 são reservados pelo sistema. */
 	if (socket_fd < 3) {
-		fprintf(stderr, "Descritor de arquivo inválido. (<3)\n");
+		fprintf(stderr, "Descritor de arquivo inválido. (< 3)\n");
 		return -1;
 	}
 
-	/* Implementação burra, adiciona complexidade O(n) desnecessária a cada evento do epoll. */
+	/* Implementação burra, adiciona complexidade O(n) (((aparentemente))) desnecessária a cada evento do epoll. */
 	for (size_t i = 0; i < MAX_USERS_PER_CHANNEL; i++)
 		if (users[i].server_data.socket_fd == socket_fd)
 			return i;
@@ -157,36 +157,36 @@ print_buffer(int user_index)
 static void
 start_server()
 {
-        int listen_socket_fd, connection_socket_fd, epfd, nfds;
-        struct sockaddr_in server_address, client_address;
-        struct epoll_event events[MAX_USERS_PER_CHANNEL];
-        socklen_t client_length;
+	int listen_socket_fd, connection_socket_fd, epfd, nfds;
+	struct sockaddr_in server_address, client_address;
+	struct epoll_event events[MAX_USERS_PER_CHANNEL];
+	socklen_t client_length;
 
-        if ((epfd = epoll_create(256)) < 0)
+	if ((epfd = epoll_create(256)) < 0)
 		fatal_error("epoll_create");
 
-        if ((listen_socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	if ((listen_socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 		fatal_error("socket");
 
-        set_non_blocking(listen_socket_fd);
+	set_non_blocking(listen_socket_fd);
 
 	epoll_ctl_add(epfd, listen_socket_fd, EPOLLIN | EPOLLET);	
 
-        memset(&server_address, 0, sizeof(server_address));
-        server_address.sin_family = AF_INET;
+	memset(&server_address, 0, sizeof(server_address));
+	server_address.sin_family = AF_INET;
 	server_address.sin_addr.s_addr = INADDR_ANY;
-        server_address.sin_port = htons(SERVER_PORT);
+	server_address.sin_port = htons(SERVER_PORT);
 
-        if (bind(listen_socket_fd, (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
+	if (bind(listen_socket_fd, (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
 		fatal_error("bind");
-        
+	
 	if (listen(listen_socket_fd, 16) < 0)
 		fatal_error("listen");
 
-        while (true) {
-                if ((nfds = epoll_wait(epfd, events, 20, 500)) < 0)
+	while (true) {
+		if ((nfds = epoll_wait(epfd, events, 20, 500)) < 0)
 			fatal_error("epoll_wait");
-                
+			
 		for (size_t i = 0; i < nfds; ++i) {
 			if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP) || (!(events[i].events & EPOLLIN))) {
 				close(events[i].data.fd);
@@ -231,32 +231,26 @@ start_server()
 
 				int user_index = get_user_index_from_socket(events[i].data.fd);
 
-				if (user_index < 0) {
+				if (user_index < 0)
 					done = true;
-					break;
-				}
 
-				if (users[user_index].server_data.mode == USER_EMPTY) {
+				if (users[user_index].server_data.mode == USER_EMPTY)
 					done = true;
-					break;
-				}
 
 				if (user_index > MAX_USERS_PER_CHANNEL) {
 					close_user(user_index);
 					done = true;
-					break;
 				}
 
 				if (!receive(user_index)) {
 					users[user_index].server_data.user_close = true;
 					done = true;
-					break;
 				}
 
 				unsigned char *message = NULL;
 
-				while (true) {
-					/* AQUI É QUE ONDE O PAU QUEBRA */
+				while (!done) {
+					/* AQUI É ONDE O PAU QUEBRA */
 
 					message = read_client_message(user_index);
 
@@ -278,9 +272,9 @@ start_server()
 
 					close(events[i].data.fd);
 				}
-                        }
-                }
-        }
+			}
+		}
+	}
 
 	close(listen_socket_fd);
 }

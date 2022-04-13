@@ -51,6 +51,9 @@ refresh_send_buffer(int user_index)
 	buffer->send_position = left;
 }
 
+/*
+ * Essa função precisa retornar erros pra fechar o socket lá fora.
+ */
 unsigned char *
 read_client_message(int user_index)
 {
@@ -65,7 +68,7 @@ read_client_message(int user_index)
 	if (!buffer->initialized) {
 		if (buffer->recv_position - buffer->proc_position < 4)
 			return NULL;
-		
+
 		int init_code = *((unsigned int *)(buffer->recv_buffer + buffer->proc_position));
 
 		if (init_code != INITCODE) {
@@ -91,7 +94,7 @@ read_client_message(int user_index)
 	unsigned short rest = buffer->recv_position - buffer->proc_position;
 
 	if (size > rest)
-		return NULL;
+    	return NULL;
 
 	unsigned char *message = &(buffer->recv_buffer[buffer->proc_position]);
 
@@ -171,7 +174,6 @@ receive(int user_index)
 
 	/* NOTE: Acho que dá pra melhorar isso aqui */
 	if (received_bytes == rest) {
-		puts("entrei onde não deveria >:(");
 		refresh_recv_buffer(user_index);
 		rest = RECV_BUFFER_SIZE - buffer->recv_position;
 		received_bytes = recv(users[user_index].server_data.socket_fd, (unsigned char*)(buffer->recv_buffer + buffer->recv_position), rest, 0);

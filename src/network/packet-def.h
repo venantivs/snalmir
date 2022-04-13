@@ -4,6 +4,7 @@
 #include "../core/base-def.h"
 
 #define LOGIN_OPERATION_CODE 0x20D
+#define xlen(buffer_) *(unsigned short*)buffer_
 
 struct packet_header {
 	short size;

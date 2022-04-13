@@ -8,15 +8,17 @@
  */
 
 #include <stdio.h>
+#include <time.h>
+#include <string.h>
 
 #include "server.h"
 #include "packet-def.h"
 #include "packet-handler.h"
 
 bool
-segregate_packet(unsigned char *message, int user_index)
+segregate_packet(unsigned char *packet, int user_index)
 {
-	struct packet_header *header = (struct packet_header *)message;
+	struct packet_header *header = (struct packet_header *)packet;
 
 	if (user_index > 0 && user_index < MAX_USERS_PER_CHANNEL)
 		users[user_index].server_data.last_recv_time = sec_counter;
@@ -29,8 +31,27 @@ segregate_packet(unsigned char *message, int user_index)
 		if (header->size != 116)
 			return false;
 		
-
+		struct packet_request_login *login_request = (struct packet_request_login *)header;
+		login_request->header.index = user_index;
+		login_request->header.operation_code = 0x100;
+		login_request->header.size = sizeof(struct packet_request_login);
+		/* MANDAR PRA "DBSRV" AQUI */
+		users[user_index].server_data.mode = USER_LOGIN;
+		users[user_index].server_data.last_recv_time = clock() + 110; /* ??? */
+		strncpy(users[user_index].account_name, login_request->name, 16); /* PARECE BURRICE */
+		return true;
+	} else if (users[user_index].server_data.mode >= USER_LOGIN && header->operation_code != 0x20D) {
+		
 	}
 
 	return false;
-} 
+}
+
+void
+print_message(unsigned char *packet)
+{
+	for(size_t i = 0; i < xlen(packet); i++) {
+		printf("%hhx ", packet[i]);
+	}
+	printf("\n");
+}
