@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 #include "../core/base-def.h"
+#include "../network/packet-def.h"
 #include "../general-config.h"
 
 enum user_mode { USER_EMPTY, USER_ACCEPT, USER_LOGIN, USER_NUMERIC_PASSWORD,
@@ -51,9 +52,41 @@ struct user_server_st {
 	struct user_server_data_st server_data;
 };
 
+/* ACCOUNT FILE RELATED */
+
+struct profile_file_st {
+	unsigned int account_id;
+	char account_name[ACCOUNTNAME_LENGTH];
+	char account_password[ACCOUNTPASS_LENGTH];
+	char numeric_password[6];
+	char real_name[REALNAME_LENGTH];
+	char email[EMAIL_LENGTH];
+	char telephone[TELEPHONE_LENGTH];
+	char address[ADDRESS_LENGTH];
+	char mob_name[MOB_PER_ACCOUNT][16];
+	unsigned short game_server;
+	char keys[16];
+	char ipaddr[16];
+	char last_ip2[16];
+	char last_ip3[16];
+	int gold;
+	unsigned int char_info;
+	int cash;
+	unsigned int sel_char;
+	struct item_st cargo[128];
+	int Mode;
+};
+
+struct account_file_st {
+	struct profile_file_st profile;
+	struct mob_st mob_account[MOB_PER_ACCOUNT];
+	struct subcelestial_st subcelestials[MOB_PER_ACCOUNT];
+};
+
 bool	create_account(const char *, const char *);
 bool	delete_account(const char *, const char *);
 bool	accept_user(int, int, unsigned, char *);
+bool 	login_user(struct packet_request_login*, int);
 bool 	close_user(int);
 
 #endif

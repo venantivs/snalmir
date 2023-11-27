@@ -23,7 +23,9 @@ segregate_packet(unsigned char *packet, int user_index)
 	if (user_index > 0 && user_index < MAX_USERS_PER_CHANNEL)
 		users[user_index].server_data.last_recv_time = sec_counter;
 
-	/* ????? */
+	printf("USER_INDEX: %d | OP_CODE: 0x%x.\n", user_index, header->operation_code);
+
+	/* Packet enviado ao deslogar */
 	if (header->operation_code == 0x3A0)
 		return true;
 
@@ -32,10 +34,12 @@ segregate_packet(unsigned char *packet, int user_index)
 			return false;
 		
 		struct packet_request_login *login_request = (struct packet_request_login *)header;
-		login_request->header.index = user_index;
-		login_request->header.operation_code = 0x100;
-		login_request->header.size = sizeof(struct packet_request_login);
-		/* MANDAR PRA "DBSRV" AQUI */
+		login_request->header.index = user_index; // DBSERV, remover
+		login_request->header.operation_code = 0x100; // DBSERV, remover
+		login_request->header.size = sizeof(struct packet_request_login); // DBSERV, remover
+
+		login_user(login_request, user_index);
+
 		users[user_index].server_data.mode = USER_LOGIN;
 		users[user_index].server_data.last_recv_time = clock() + 110; /* ??? */
 		strncpy(users[user_index].account_name, login_request->name, 16); /* PARECE BURRICE */

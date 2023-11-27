@@ -1,3 +1,4 @@
 bin/snalmir
 
 *.o
+*.bak

@@ -31,6 +31,7 @@
 #include "server.h"
 
 struct user_server_st users[MAX_USERS_PER_CHANNEL];
+struct account_file_st users_db[MAX_USERS_PER_CHANNEL];
 struct user_server_st temp_user;
 struct mob_server_st mobs[30000];
 struct ground_item_st ground_items[4096];
@@ -64,6 +65,7 @@ void
 *init_server()
 {
 	memset(users, 0, sizeof(struct user_server_st) * MAX_USERS_PER_CHANNEL);
+	memset(users_db, 0, sizeof(struct account_file_st) * MAX_USERS_PER_CHANNEL);
 	memset(&temp_user, 0, sizeof(struct user_server_st));
 	memset(mobs, 0, sizeof(struct mob_server_st) * 30000);
 	memset(ground_items, 0, sizeof(struct ground_item_st) * 4096);

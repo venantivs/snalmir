@@ -14,5 +14,6 @@ bool			add_client_message(unsigned char *, size_t, int);
 bool			receive(int);
 bool 			send_one_message(unsigned char*, size_t, int);
 bool			send_all_messages(int);
+void      send_client_string_message(int, char*);
 
 #endif

@@ -6,6 +6,7 @@
 #include "../core/mob.h"
 
 extern struct user_server_st users[MAX_USERS_PER_CHANNEL];
+extern struct account_file_st users_db[MAX_USERS_PER_CHANNEL];
 extern struct mob_server_st mobs[30000];
 extern struct ground_item_st ground_items[4096];
 extern struct party_st parties[500];

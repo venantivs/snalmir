@@ -15,6 +15,11 @@ struct packet_header {
 	unsigned time;
 };
 
+struct packet_string_message {
+	struct packet_header header;
+	char string_message[96];
+};
+
 struct packet_request_login {
 	struct packet_header header;
 	char name[16];
