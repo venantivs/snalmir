@@ -129,12 +129,12 @@ bool
 login_user(struct packet_request_login* request_login, int user_index)
 {
 	if (request_login->version != CLIENT_VERSION) {
-		send_client_string_message(user_index, "Atualize seu WYD.");
+		send_client_string_message("Atualize seu WYD.", user_index);
 		return false;
 	}
 
 	if (strlen(request_login->name) == 16 || strlen(request_login->password) == 12) {
-		send_client_string_message(user_index, "Nome e/ou Senha muito grande.");
+		send_client_string_message("Nome e/ou Senha muito grande.", user_index);
 		return false;
 	}
 
@@ -147,17 +147,17 @@ login_user(struct packet_request_login* request_login, int user_index)
 	bool loaded_account = load_account(request_login->name, request_login->password, account, user_index);
 
 	if (!loaded_account) {
-		send_client_string_message(user_index, "Conta nao encontrada.");
+		send_client_string_message("Conta nao encontrada.", user_index);
 		return false;
 	}
 
 	if (strcmp(account->profile.account_password, request_login->password) != 0) {
-		send_client_string_message(user_index, "Senha incorreta.");
+		send_client_string_message("Senha incorreta.", user_index);
 		return false;
 	}
 
 	if (!logged_account) {
-		send_client_string_message(user_index, "Conexao simultanea.");
+		send_client_string_message("Conexao simultanea.", user_index);
 		return false;
 	}
 
@@ -204,10 +204,10 @@ login_user_numeric(struct packet_request_numeric_password *request_numeric_passw
 				users[user_index].server_data.mode = USER_SELCHAR;
 				request_numeric_password->header.operation_code = 0xFDE;
 				send_one_message((unsigned char*) request_numeric_password, xlen(request_numeric_password), user_index);
-				send_client_string_message(user_index, "Seja bem-vindo ao servidor Snalmir!");
+				send_client_string_message("Seja bem-vindo ao servidor Snalmir!", user_index);
 			} else {
 				// Senha numérica não confere.
-				send_client_string_message(user_index, "Senha invalida.");
+				send_client_string_message("Senha invalida.", user_index);
 
 				struct packet_signal signal = { 0 };
 
@@ -220,13 +220,13 @@ login_user_numeric(struct packet_request_numeric_password *request_numeric_passw
 		} else {
 			// Alteração de senha numérica.
 			strncpy(account->profile.numeric_password, request_numeric_password->numeric, 6); // Tomar cuidado com o \0 que deve ficar no final.
-			send_client_string_message(user_index, "Senha alterada.");
+			send_client_string_message("Senha alterada.", user_index);
 			save_account(user_index);
 		}
 	} else {
 		// Senha numérica ainda não atribuída (conta nova).
 		strncpy(account->profile.numeric_password, request_numeric_password->numeric, 6); // Tomar cuidado com o \0 que deve ficar no final.
-		send_client_string_message(user_index, "Senha atribuida.");
+		send_client_string_message("Senha atribuida.", user_index);
 		save_account(user_index);
 	}
 

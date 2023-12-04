@@ -330,7 +330,7 @@ send_all_messages(int user_index)
 }
 
 void
-send_client_string_message(int user_index, char* message)
+send_client_string_message(const char* message, int user_index)
 {
 	struct packet_string_message string_message;
 
