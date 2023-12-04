@@ -10,7 +10,7 @@ Este servidor está sendo desenvolvido apenas com fins educacionais.
 
 ## Roadmap
 - [x] Funcionamento básico do servidor com **epoll**
-- [ ] Login
+- [x] Login
 - [ ] Login de Char
 - [ ] Logout de Char
 - [ ] Criação de Char
