@@ -177,11 +177,6 @@ add_client_message(unsigned char *message, size_t size, int user_index)
 	header->key = rand_key;
 	header->checksum = 0;
 
-	for(size_t i = 0; i < xlen(message); i++) {
-		printf("%hhx ", message[i]);
-	}
-	printf("\n");
-
 	/* CUSTOM ENCRYPT FOR TESTING - START */
 	// int i;
 	// int pos, Key, rand_key;
@@ -230,11 +225,6 @@ add_client_message(unsigned char *message, size_t size, int user_index)
 	/* CUSTOM ENCRYPT FOR TESTING - END */
 
 	encrypt(&message);
-
-	for(size_t i = 0; i < xlen(message); i++) {
-		printf("%hhx ", message[i]);
-	}
-	printf("\n");
 
 	memcpy(buffer->send_buffer + buffer->send_position, message, xlen(message));
 	buffer->queued_messages_count++;
