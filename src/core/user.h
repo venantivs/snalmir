@@ -87,6 +87,7 @@ bool	create_account(const char *, const char *);
 bool	delete_account(const char *, const char *);
 bool	accept_user(int, int, unsigned, char *);
 bool 	login_user(struct packet_request_login*, int);
+bool  login_user_numeric(struct packet_request_numeric_password*, int);
 bool 	close_user(int);
 
 #endif

@@ -23,9 +23,10 @@ segregate_packet(unsigned char *packet, int user_index)
 	if (user_index > 0 && user_index < MAX_USERS_PER_CHANNEL)
 		users[user_index].server_data.last_recv_time = sec_counter;
 
+	printf("=======================================\n");
 	printf("USER_INDEX: %d | OP_CODE: 0x%x.\n", user_index, header->operation_code);
 
-	/* Packet enviado ao deslogar */
+	/* Packet keep-alive? */
 	if (header->operation_code == 0x3A0)
 		return true;
 
@@ -33,19 +34,32 @@ segregate_packet(unsigned char *packet, int user_index)
 		if (header->size != 116)
 			return false;
 		
-		struct packet_request_login *login_request = (struct packet_request_login *)header;
-		login_request->header.index = user_index; // DBSERV, remover
-		login_request->header.operation_code = 0x100; // DBSERV, remover
-		login_request->header.size = sizeof(struct packet_request_login); // DBSERV, remover
-
-		login_user(login_request, user_index);
-
 		users[user_index].server_data.mode = USER_LOGIN;
+
+		struct packet_request_login *login_request = (struct packet_request_login *)header;
+
+		if (!login_user(login_request, user_index))
+			return false;
+
 		users[user_index].server_data.last_recv_time = clock() + 110; /* ??? */
-		strncpy(users[user_index].account_name, login_request->name, 16); /* PARECE BURRICE */
 		return true;
-	} else if (users[user_index].server_data.mode >= USER_LOGIN && header->operation_code != 0x20D) {
-		
+	}
+
+	if (!(users[user_index].server_data.mode >= USER_LOGIN && header->operation_code != 0x20D))
+		return false;
+
+	switch(header->operation_code) {
+	case 0xFDE:
+		if (users[user_index].server_data.mode >= USER_NUMERIC_PASSWORD && users[user_index].server_data.mode <= USER_NUMERIC_PASSWORD_RSUCCESS) {
+			struct packet_request_numeric_password *numeric_password_request = (struct packet_request_numeric_password *)header;
+
+			if (numeric_password_request->change_numeric == 1)
+				users[user_index].server_data.mode = USER_NUMERIC_PASSWORD_CHANGE;
+			else
+				users[user_index].server_data.mode = USER_NUMERIC_PASSWORD_RSUCCESS;
+
+			return login_user_numeric(numeric_password_request, user_index);
+		}
 	}
 
 	return false;

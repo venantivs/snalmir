@@ -6,6 +6,7 @@
 #define LOGIN_OPERATION_CODE 0x20D
 #define xlen(buffer_) *(unsigned short*)buffer_
 
+// 12 bytes
 struct packet_header {
 	short size;
 	unsigned char key;
@@ -13,6 +14,10 @@ struct packet_header {
 	short operation_code;
 	short index;
 	unsigned time;
+};
+
+struct packet_signal {
+	struct packet_header header;
 };
 
 struct packet_string_message {

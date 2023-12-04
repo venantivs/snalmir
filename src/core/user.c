@@ -72,6 +72,25 @@ load_account(const char *user, const char *password, struct account_file_st *acc
 	return true;
 }
 
+void
+save_account(int user_index)
+{
+	FILE *user_account = NULL;
+	char file_path[1024] = { 0 };
+	const char *account_name = users_db[user_index].profile.account_name;
+
+	sprintf(file_path, "./accounts/%s", account_name);
+
+	user_account = fopen(file_path, "r+b");
+
+	if (user_account == NULL)
+		return;
+
+	fwrite(&users_db[user_index].profile, sizeof(struct profile_file_st), 1, user_account);
+	fclose(user_account);
+	return;	
+}
+
 bool
 delete_account(const char *user, const char *password)
 {
@@ -122,23 +141,23 @@ login_user(struct packet_request_login* request_login, int user_index)
 	request_login->name[11] = '\0'; /* Talvez dê pra fazer isso de outro modo */
 	request_login->password[11] = '\0'; /* Talvez dê pra fazer isso de outro modo */
 
-	struct account_file_st account = { 0 };
+	struct account_file_st *account = &users_db[user_index];
 
 	bool logged_account = search_logged_account(request_login->name);
-	bool loaded_account = load_account(request_login->name, request_login->password, &account, user_index);
+	bool loaded_account = load_account(request_login->name, request_login->password, account, user_index);
 
 	if (!loaded_account) {
-		send_client_string_message(user_index, "Conta não encontrada.");
+		send_client_string_message(user_index, "Conta nao encontrada.");
 		return false;
 	}
 
-	if (strcmp(account.profile.account_password, request_login->password) != 0) {
+	if (strcmp(account->profile.account_password, request_login->password) != 0) {
 		send_client_string_message(user_index, "Senha incorreta.");
 		return false;
 	}
 
 	if (!logged_account) {
-		send_client_string_message(user_index, "Conexão simultânea.");
+		send_client_string_message(user_index, "Conexao simultanea.");
 		return false;
 	}
 
@@ -152,20 +171,64 @@ login_user(struct packet_request_login* request_login, int user_index)
 	char_list.header.size = sizeof(struct packet_char_list);
 	char_list.header.operation_code = 0x10E;
 	char_list.header.index = user_index;
-	char_list.gold = account.profile.gold;
-	char_list.cash = account.profile.cash;
+	char_list.gold = account->profile.gold;
+	char_list.cash = account->profile.cash;
 
 	users[user_index].server_data.mode = USER_NUMERIC_PASSWORD;
 	users[user_index].gold = char_list.gold;
 	users[user_index].cash = char_list.cash;
+	strncpy(users[user_index].account_name, request_login->name, 16); /* PARECE BURRICE */
 
-	load_selchar(account.mob_account, &char_list.sel_list);
-	memcpy(char_list.storage, account.profile.cargo, sizeof(char_list.storage));
+	load_selchar(account->mob_account, &char_list.sel_list);
+	memcpy(char_list.storage, account->profile.cargo, sizeof(char_list.storage));
 	memcpy(&users[user_index].storage, char_list.storage, sizeof(struct item_st) * MAX_STORAGE);
 	strncpy(char_list.name, request_login->name, sizeof(char_list.name));
 
 	add_client_message((unsigned char*)&char_list, char_list.header.size, user_index);
 	send_all_messages(user_index);
+
+	return true;
+}
+
+bool
+login_user_numeric(struct packet_request_numeric_password *request_numeric_password, int user_index)
+{
+	struct account_file_st *account = &users_db[user_index];
+
+	// REGEX PARA VALIDAR MENSAGEM
+
+	if (*account->profile.numeric_password != '\0') {
+		if (request_numeric_password->change_numeric != 1) {
+			if (strncmp(request_numeric_password->numeric, account->profile.numeric_password, 6) == 0) {
+				// Senha correta.
+				users[user_index].server_data.mode = USER_SELCHAR;
+				request_numeric_password->header.operation_code = 0xFDE;
+				send_one_message((unsigned char*) request_numeric_password, xlen(request_numeric_password), user_index);
+				send_client_string_message(user_index, "Seja bem-vindo ao servidor Snalmir!");
+			} else {
+				// Senha numérica não confere.
+				send_client_string_message(user_index, "Senha invalida.");
+
+				struct packet_signal signal = { 0 };
+
+				signal.header.index = user_index;
+				signal.header.size = sizeof(struct packet_signal);
+				signal.header.operation_code = 0xFDF; // Código de Operação de senha numérica incorreta. 
+				add_client_message((unsigned char*) &signal, xlen(&signal), user_index);
+				send_all_messages(user_index);
+			}
+		} else {
+			// Alteração de senha numérica.
+			strncpy(account->profile.numeric_password, request_numeric_password->numeric, 6); // Tomar cuidado com o \0 que deve ficar no final.
+			send_client_string_message(user_index, "Senha alterada.");
+			save_account(user_index);
+		}
+	} else {
+		// Senha numérica ainda não atribuída (conta nova).
+		strncpy(account->profile.numeric_password, request_numeric_password->numeric, 6); // Tomar cuidado com o \0 que deve ficar no final.
+		send_client_string_message(user_index, "Senha atribuida.");
+		save_account(user_index);
+	}
 
 	return true;
 }
