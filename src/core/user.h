@@ -84,10 +84,12 @@ struct account_file_st {
 };
 
 bool	create_account(const char *, const char *);
+void 	save_account(int);
 bool	delete_account(const char *, const char *);
 bool	accept_user(int, int, unsigned, char *);
 bool 	login_user(struct packet_request_login*, int);
 bool  login_user_numeric(struct packet_request_numeric_password*, int);
+bool	create_char(struct packet_request_create_char*, int);
 bool 	close_user(int);
 
 #endif

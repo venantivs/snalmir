@@ -60,6 +60,8 @@ segregate_packet(unsigned char *packet, int user_index)
 
 			return login_user_numeric(numeric_password_request, user_index);
 		}
+	case 0x20F:
+		return create_char((struct packet_request_create_char *) header, user_index);
 	}
 
 	return false;

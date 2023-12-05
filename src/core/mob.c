@@ -17,6 +17,54 @@
 #include "user.h"
 
 void
+load_base_char_mobs()
+{
+  static const char *class_mobs_paths[] = {
+    "./npc/TK",
+    "./npc/FM",
+    "./npc/BM",
+    "./npc/HT"
+  };
+
+  for (size_t i = 0; i < MOB_PER_ACCOUNT; i++) {
+    FILE *user_mob = NULL;
+
+    user_mob = fopen(class_mobs_paths[i], "rb");
+
+    if (user_mob == NULL) {
+      char error[1024] = { 0 };
+
+      sprintf(error, "Could not load %s", class_mobs_paths[i]);
+      fatal_error(error);
+    }
+
+    fread(&base_char_mobs[i], sizeof(struct mob_st), 1, user_mob);
+    fclose(user_mob);
+  }
+}
+
+void
+create_mob(const char* name, int user_index)
+{
+  FILE *user_mob = NULL;
+  char file_path[1024] = { 0 };
+
+  sprintf(file_path, "./char/%s", name);
+
+  user_mob = fopen(file_path, "wb");
+
+  if (user_mob == NULL)
+    return;
+
+  struct account_file_st *account_file = &users_db[user_index];
+  unsigned char_index = account_file->profile.sel_char;
+
+  fwrite(&account_file->mob_account[char_index], sizeof(struct mob_st), 1, user_mob);
+  fwrite(&account_file->subcelestials[char_index], sizeof(struct subcelestial_st), 1, user_mob);
+  fclose(user_mob);
+}
+
+void
 load_mob(int char_index, int user_index)
 {
   FILE *user_mob = NULL;
@@ -43,6 +91,51 @@ load_mob(int char_index, int user_index)
   fclose(user_mob);
 
   return;
+}
+
+/* Muita coisa esquisita rolando aqui, rever pra ver se não tem como melhorar. */
+void
+save_mob(int char_index, bool delete_mob, int user_index)
+{
+  FILE *user_mob = NULL;
+  char file_path[1024] = { 0 };
+
+  struct account_file_st *account_file = &users_db[user_index];
+  struct mob_st *mob = &account_file->mob_account[char_index];
+  const char *name = account_file->profile.mob_name[char_index];
+
+  sprintf(file_path, "./char/%s", name);
+
+  if (mob->name == NULL)
+    return;
+
+  user_mob = fopen(file_path, "wb");
+
+  if (!delete_mob) {
+    if (user_mob == NULL) {
+      if (name[0] != '\0')
+        return create_mob(name, user_index);
+      else
+        return;
+    }
+
+    fwrite(&account_file->mob_account[char_index], sizeof(struct mob_st), 1, user_mob);
+    fwrite(&account_file->subcelestials[char_index], sizeof(struct subcelestial_st), 1, user_mob);
+    fclose(user_mob);
+  } else {
+    if (user_mob == NULL)
+      return;
+
+    fclose(user_mob);
+    if (remove(file_path) == -1) {
+      char error[1041] = { 0 }; // Caracteres adicionados para mitigar chance de overflow.
+
+      sprintf(error, "Could not delete %s", file_path);
+      fatal_error(error);
+    }
+    account_file->profile.mob_name[char_index][0] = '\0';
+    save_account(user_index);
+  }
 }
 
 void

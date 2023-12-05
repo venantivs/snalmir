@@ -78,7 +78,9 @@ struct mob_server_st {
 	bool in_party;
 };
 
+void load_base_char_mobs();
 void load_mob(int, int);
+void save_mob(int, bool, int);
 void load_selchar(struct mob_st _char[4], struct char_list_st *);
 
 #endif

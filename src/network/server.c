@@ -31,11 +31,14 @@
 #include "server.h"
 
 struct user_server_st users[MAX_USERS_PER_CHANNEL];
-struct account_file_st users_db[MAX_USERS_PER_CHANNEL];
 struct user_server_st temp_user;
 struct mob_server_st mobs[30000];
 struct ground_item_st ground_items[4096];
 struct party_st parties[500];
+
+/* DB */
+struct account_file_st users_db[MAX_USERS_PER_CHANNEL];
+struct mob_st base_char_mobs[MOB_PER_ACCOUNT];
 
 unsigned long current_time;
 int current_weather;
@@ -65,11 +68,14 @@ void
 *init_server()
 {
 	memset(users, 0, sizeof(struct user_server_st) * MAX_USERS_PER_CHANNEL);
-	memset(users_db, 0, sizeof(struct account_file_st) * MAX_USERS_PER_CHANNEL);
 	memset(&temp_user, 0, sizeof(struct user_server_st));
 	memset(mobs, 0, sizeof(struct mob_server_st) * 30000);
 	memset(ground_items, 0, sizeof(struct ground_item_st) * 4096);
 	memset(parties, -1, sizeof(struct party_st) * 500);
+
+	/* DB */
+	memset(users_db, 0, sizeof(struct account_file_st) * MAX_USERS_PER_CHANNEL);
+	memset(base_char_mobs, 0, sizeof(struct mob_st) * MOB_PER_ACCOUNT);
 
 	current_time = 0;
 	current_weather = 0;
@@ -88,9 +94,10 @@ void
 	it_val.it_value.tv_usec = 0;
 	it_val.it_interval = it_val.it_value;
 
-  	if (setitimer(ITIMER_REAL, &it_val, NULL) == -1)
+  if (setitimer(ITIMER_REAL, &it_val, NULL) == -1)
 		fatal_error("setitimer");
 
+	load_base_char_mobs();
 	start_server();
 
 	return NULL;

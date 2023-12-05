@@ -110,6 +110,16 @@ delete_account(const char *user, const char *password)
 }
 
 bool
+char_exists(const char *name)
+{
+	char file_path[1024] = { 0 };
+
+	sprintf(file_path, "./char/%s", name);
+
+	return (access(file_path, F_OK) >= 0);
+}
+
+bool
 accept_user(int user_index, int socket_fd, unsigned ip, char *ip_str)
 {
 	memset(&users[user_index], 0, sizeof(struct user_server_st));
@@ -229,6 +239,96 @@ login_user_numeric(struct packet_request_numeric_password *request_numeric_passw
 		send_client_string_message("Senha atribuida.", user_index);
 		save_account(user_index);
 	}
+
+	return true;
+}
+
+/*
+	TODO: IMPLEMENTAR FUNÇÃO send_signal() EM socket-utils.
+*/
+bool
+create_char(struct packet_request_create_char *request_create_char, int user_index)
+{
+	if (users[user_index].server_data.mode != USER_SELCHAR)
+		return false;
+
+	users[user_index].server_data.mode = USER_CREWAIT;
+
+	struct account_file_st *account  = &users_db[user_index];
+
+	bool error = false;
+
+	if (account->profile.account_name[0] == '\0')
+		error = true;
+
+	if ((unsigned) request_create_char->slot_index > 3)
+		error = true;
+		
+
+	if ((unsigned) request_create_char->class_index > 3)
+		error = true;
+
+	size_t name_length = strnlen(request_create_char->name, 16);
+
+	if (name_length < 4 || name_length >= 12)
+		error = true;
+
+	for (size_t i = 0; i < 13; i++) {
+		if (error) break;
+
+		if (request_create_char->name[i] == '[' || request_create_char->name[i] == ']')
+			error = true;
+	}
+
+	if (request_create_char->name[0] == '@' || request_create_char->name[0] == '.' || request_create_char->name[0] == ':')
+		error = true;
+
+	if (strncmp(request_create_char->name, "time", 16) == 0)
+		error = true;
+
+	struct mob_st *mob = &account->mob_account[request_create_char->slot_index];
+
+	if (account->profile.char_info & (1 << request_create_char->slot_index))
+		error = true;
+
+	if (char_exists(request_create_char->name))
+		error = true;
+
+	if (error) {
+		struct packet_signal signal = { 0 };
+
+		signal.header.index = user_index;
+		signal.header.size = sizeof(struct packet_signal);
+		signal.header.operation_code = 0x11A;
+
+		users[user_index].server_data.mode = USER_SELCHAR;
+		send_one_message((unsigned char*) &signal, xlen(&signal), user_index);
+
+		return true;
+	}
+
+	if (users[user_index].server_data.mode != USER_CREWAIT)
+		return true;
+
+	account->profile.char_info |= 1 << request_create_char->slot_index;
+	mob->class_master = CLASS_MORTAL;
+
+	strncpy(account->profile.mob_name[request_create_char->slot_index], request_create_char->name, 16);
+	memcpy(&account->mob_account[request_create_char->slot_index], &base_char_mobs[request_create_char->class_index], sizeof(struct mob_st));
+	strncpy(mob->name, request_create_char->name, 16);
+
+	save_mob(request_create_char->slot_index, false, user_index);
+	save_account(user_index);
+
+	struct packet_char_list char_list = { 0 };
+	char_list.header.index = user_index;
+	char_list.header.size = sizeof(struct packet_char_list);
+	char_list.header.operation_code = 0x110;
+
+	load_selchar(account->mob_account, &char_list.sel_list);
+	send_one_message((unsigned char*) &char_list, xlen(&char_list), user_index);
+
+	users[user_index].server_data.mode = USER_SELCHAR;
 
 	return true;
 }

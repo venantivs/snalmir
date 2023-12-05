@@ -1,4 +1,8 @@
 bin/snalmir
+bin/char/*
+bin/accounts/*
+
+!.gitkeep
 
 *.o
 *.bak
