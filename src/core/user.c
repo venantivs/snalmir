@@ -308,7 +308,7 @@ create_char(struct packet_request_create_char *request_create_char, int user_ind
 	}
 
 	if (users[user_index].server_data.mode != USER_CREWAIT)
-		return true;
+		return false;
 
 	account->profile.char_info |= 1 << request_create_char->slot_index;
 	mob->class_master = CLASS_MORTAL;
@@ -327,6 +327,75 @@ create_char(struct packet_request_create_char *request_create_char, int user_ind
 
 	load_selchar(account->mob_account, &char_list.sel_list);
 	send_one_message((unsigned char*) &char_list, xlen(&char_list), user_index);
+
+	users[user_index].server_data.mode = USER_SELCHAR;
+
+	return true;
+}
+
+/*
+	TODO: IMPLEMENTAR FUNÇÃO send_signal() EM socket-utils.
+*/
+bool
+delete_char(struct packet_request_delete_char *request_delete_char, int user_index)
+{
+	if (users[user_index].server_data.mode != USER_SELCHAR)
+		return false;
+
+	users[user_index].server_data.mode = USER_DELWAIT;
+
+	struct account_file_st *account  = &users_db[user_index];
+
+	bool error = false;
+
+	if ((unsigned) request_delete_char->slot_index > 3)
+		error = true;
+
+	size_t name_length = strnlen(request_delete_char->name, 16);
+	size_t password_length = strnlen(request_delete_char->password, 12);
+
+	if (name_length < 4 || name_length >= 12 || password_length < 4 || password_length > 11)
+		error = true;
+
+	struct mob_st *mob = &account->mob_account[request_delete_char->slot_index];
+
+	if (mob->name[0] == '\0' || strncmp(mob->name, request_delete_char->name, 16) != 0)
+		error = true;
+
+	if (!(account->profile.char_info & (1 << request_delete_char->slot_index)))
+		error = true;
+
+	if (strncmp(request_delete_char->password, account->profile.account_password, 12) != 0)
+		error = true;
+
+	if (error) {
+		struct packet_signal signal = { 0 };
+
+		signal.header.index = user_index;
+		signal.header.size = sizeof(struct packet_signal);
+		signal.header.operation_code = 0x11B;
+
+		users[user_index].server_data.mode = USER_SELCHAR;
+		send_one_message((unsigned char*) &signal, xlen(&signal), user_index);
+
+		return true;
+	}
+
+	if (users[user_index].server_data.mode != USER_DELWAIT)
+		return false;
+
+	memset(mob->name, 0, 16); // Limpa o nome do char da conta.
+	save_mob(request_delete_char->slot_index, true, user_index);
+	account->profile.char_info &= ~(1 << request_delete_char->slot_index);
+	save_account(user_index);
+
+	struct packet_delete_char delete_char = { 0 };
+	delete_char.header.index = user_index;
+	delete_char.header.size = sizeof(struct packet_delete_char);
+	delete_char.header.operation_code = 0x112;
+
+	load_selchar(account->mob_account, &delete_char.sel_list);
+	send_one_message((unsigned char*) &delete_char, xlen(&delete_char), user_index);
 
 	users[user_index].server_data.mode = USER_SELCHAR;
 

@@ -90,6 +90,7 @@ bool	accept_user(int, int, unsigned, char *);
 bool 	login_user(struct packet_request_login*, int);
 bool  login_user_numeric(struct packet_request_numeric_password*, int);
 bool	create_char(struct packet_request_create_char*, int);
+bool	delete_char(struct packet_request_delete_char*, int);
 bool 	close_user(int);
 
 #endif

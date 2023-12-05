@@ -62,6 +62,8 @@ segregate_packet(unsigned char *packet, int user_index)
 		}
 	case 0x20F:
 		return create_char((struct packet_request_create_char *) header, user_index);
+	case 0x211:
+		return delete_char((struct packet_request_delete_char *) header, user_index);
 	}
 
 	return false;
