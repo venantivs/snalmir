@@ -4,6 +4,7 @@
 #include "../general-config.h"
 #include "../core/user.h"
 #include "../core/mob.h"
+#include "../core/npc.h"
 
 extern struct user_server_st users[MAX_USERS_PER_CHANNEL];
 extern struct mob_server_st mobs[30000];

@@ -98,6 +98,7 @@ void
 		fatal_error("setitimer");
 
 	load_base_char_mobs();
+	load_npcs();
 	start_server();
 
 	return NULL;

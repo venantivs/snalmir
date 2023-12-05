@@ -2,7 +2,7 @@
  * Licença: GPLv3
  * Autor: callixtvs
  * Data: Julho de 2020
- * Atualização: Dezembro de 2020
+ * Atualização: Dezembro de 2023
  * Arquivo: network/packet-handler.c
  * Descrição: Módulo onde os packets "brutos" vêm para serem corretamente direcionados.
  */
@@ -64,6 +64,8 @@ segregate_packet(unsigned char *packet, int user_index)
 		return create_char((struct packet_request_create_char *) header, user_index);
 	case 0x211:
 		return delete_char((struct packet_request_delete_char *) header, user_index);
+	case 0x213:
+		return enter_world((struct packet_request_enter_world *) header, user_index);
 	}
 
 	return false;

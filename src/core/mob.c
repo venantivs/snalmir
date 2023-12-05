@@ -20,10 +20,10 @@ void
 load_base_char_mobs()
 {
   static const char *class_mobs_paths[] = {
-    "./npc/TK",
-    "./npc/FM",
-    "./npc/BM",
-    "./npc/HT"
+    "./char_base/TK",
+    "./char_base/FM",
+    "./char_base/BM",
+    "./char_base/HT"
   };
 
   for (size_t i = 0; i < MOB_PER_ACCOUNT; i++) {

@@ -2,7 +2,7 @@
  * Licença: GPLv3
  * Autor: callixtvs
  * Data: Julho de 2020
- * Atualização: Dezembro de 2020
+ * Atualização: Dezembro de 2023
  * Arquivo: core/user.c
  * Descrição: Arquivo onde são implementadas as funções que correspondem ao usuário em específico,
  *  como criar conta, login, logout, etc.
@@ -381,6 +381,15 @@ delete_char(struct packet_request_delete_char *request_delete_char, int user_ind
 	users[user_index].server_data.mode = USER_SELCHAR;
 
 	return true;
+}
+
+bool
+enter_world(struct packet_request_enter_world *request_enter_world, int user_index)
+{
+	if (users[user_index].server_data.mode != USER_SELCHAR)
+		return false;
+
+	return false; // Fecha conexão com usuário.
 }
 
 bool
