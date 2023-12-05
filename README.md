@@ -20,6 +20,11 @@ Este servidor está sendo desenvolvido apenas com fins educacionais.
 - [ ] Mover
 - [ ] ...
 
+## TODOs gerais
+- [ ] Inserção de um linter no projeto.
+- [ ] Substituição de armazenamento de dados via arquivo por um SGBD.
+- [ ] Substuição dos tipos nativos pelos mais intuitivos definidos em `stdint.h`.
+
 ## Setup & Execução
 ```bash
 $ git clone git@github.com:theskytalos/snalmir.git
