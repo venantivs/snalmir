@@ -340,3 +340,15 @@ send_client_string_message(const char* message, int user_index)
 
 	send_one_message((unsigned char*)&string_message, xlen(&string_message), user_index);
 }
+
+void
+send_signal(short operation_code, int user_index)
+{
+	struct packet_signal signal = { 0 };
+
+	signal.header.index = user_index;
+	signal.header.size = sizeof(struct packet_signal);
+	signal.header.operation_code = operation_code;
+
+	send_one_message((unsigned char*) &signal, xlen(&signal), user_index);
+}

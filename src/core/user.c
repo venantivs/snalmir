@@ -218,14 +218,7 @@ login_user_numeric(struct packet_request_numeric_password *request_numeric_passw
 			} else {
 				// Senha numérica não confere.
 				send_client_string_message("Senha invalida.", user_index);
-
-				struct packet_signal signal = { 0 };
-
-				signal.header.index = user_index;
-				signal.header.size = sizeof(struct packet_signal);
-				signal.header.operation_code = 0xFDF; // Código de Operação de senha numérica incorreta. 
-				add_client_message((unsigned char*) &signal, xlen(&signal), user_index);
-				send_all_messages(user_index);
+				send_signal(0xFDF, user_index); // Código de Operação de senha numérica incorreta.
 			}
 		} else {
 			// Alteração de senha numérica.
@@ -295,14 +288,8 @@ create_char(struct packet_request_create_char *request_create_char, int user_ind
 		error = true;
 
 	if (error) {
-		struct packet_signal signal = { 0 };
-
-		signal.header.index = user_index;
-		signal.header.size = sizeof(struct packet_signal);
-		signal.header.operation_code = 0x11A;
-
 		users[user_index].server_data.mode = USER_SELCHAR;
-		send_one_message((unsigned char*) &signal, xlen(&signal), user_index);
+		send_signal(0x11A, user_index);
 
 		return true;
 	}
@@ -369,14 +356,8 @@ delete_char(struct packet_request_delete_char *request_delete_char, int user_ind
 		error = true;
 
 	if (error) {
-		struct packet_signal signal = { 0 };
-
-		signal.header.index = user_index;
-		signal.header.size = sizeof(struct packet_signal);
-		signal.header.operation_code = 0x11B;
-
 		users[user_index].server_data.mode = USER_SELCHAR;
-		send_one_message((unsigned char*) &signal, xlen(&signal), user_index);
+		send_signal(0x11B, user_index);
 
 		return true;
 	}
