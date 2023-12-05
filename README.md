@@ -13,7 +13,7 @@ Este servidor está sendo desenvolvido apenas com fins educacionais.
 - [x] Login
 - [ ] Login de Char
 - [ ] Logout de Char
-- [ ] Criação de Char
+- [x] Criação de Char
 - [ ] Remoção de Char
 - [ ] Mensagem de Chat
 - [ ] Actions
