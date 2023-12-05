@@ -11,7 +11,7 @@ Este servidor está sendo desenvolvido apenas com fins educacionais.
 ## Roadmap
 - [x] Funcionamento básico do servidor com **epoll**
 - [x] Login
-- [ ] Login de Char
+- [ ] Login de Char (Entrar no mundo)
 - [ ] Logout de Char
 - [x] Criação de Char
 - [x] Remoção de Char
@@ -24,6 +24,8 @@ Este servidor está sendo desenvolvido apenas com fins educacionais.
 - [ ] Inserção de um linter no projeto.
 - [ ] Substituição de armazenamento de dados via arquivo por um SGBD.
 - [ ] Substuição dos tipos nativos pelos mais intuitivos definidos em `stdint.h`.
+- [ ] Adição de nome de parãmetros nas declarações de funções nos arquivos de cabeçalho.
+- [ ] Renomear funções de rede que contenham `message` para `packet`.
 
 ## Setup & Execução
 ```bash
