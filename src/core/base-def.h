@@ -23,14 +23,16 @@
 #define	MAX_LEVELCSH		200
 #define	MOB_PER_ACCOUNT		4
 
-#define	MAX_SUMMONLIST		4096
-#define	MAX_GUILD		4096
-#define	MAX_NPCGENERATOR	8192
-#define	MAX_STORAGE		128
-#define	MAX_CLAN		26
-#define	MAX_SEGMENT		5
-#define	LAST_SEGMENT		4
-#define	MAX_CLASS		4
+#define	MAX_SUMMONLIST			4096
+#define	MAX_GUILD						4096
+#define	MAX_NPCGENERATOR		8192
+#define MAX_SPAWN_LIST 			30000
+#define MAX_INIT_ITEM_LIST 	4096
+#define	MAX_STORAGE					128
+#define	MAX_CLAN						26
+#define	MAX_SEGMENT					5
+#define	LAST_SEGMENT				4
+#define	MAX_CLASS						4
 
 #define	IDX_ITEM		10000
 #define	MAX_ITEM		6500
@@ -252,6 +254,14 @@
 #define GRIFO_SANGRENTO         34
 #define SVADILFARI              35
 #define SLEIPNIR                36
+
+/* Pesadelos e Cartas */
+#define PesaN                   0
+#define PesaM                   1
+#define PesaA                   2
+#define CartaN                  0
+#define CartaM                  1
+#define CartaA                  2
 
 //EMOTION 50 22
 #define p39x_MISS               -3
