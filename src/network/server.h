@@ -7,7 +7,7 @@
 #include "../core/npc.h"
 
 extern struct user_server_st users[MAX_USERS_PER_CHANNEL];
-extern struct mob_server_st mobs[30000];
+extern struct mob_server_st mobs[MAX_SPAWN_LIST];
 extern struct ground_item_st ground_items[4096];
 extern struct party_st parties[500];
 extern struct settings_st settings;

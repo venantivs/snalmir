@@ -10,13 +10,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
+#include "../network/server.h"
 #include "npc.h"
+#include "mob.h"
+#include "world.h"
+#include "base_functions.h"
 #include "utils.h"
 
 struct npcgener_st gener_list[MAX_NPCGENERATOR];
 struct mob_st baby_list[MAX_MOB_BABY];
 unsigned load_npc_count = 0;
+unsigned spawn_count = 0;
 
 void
 load_npcs()
@@ -193,5 +199,92 @@ load_mob_baby()
     if (new_mob.name[0] == '\0') continue;
 
     memcpy(npc_mob, &new_mob, sizeof(struct mob_st));
+  }
+}
+
+void
+spawn_mobs()
+{
+  for (size_t i = 0; i < load_npc_count; i++) {
+    struct npcgener_st *npc_mob = &gener_list[i];
+    struct mob_st *mob = &npc_mob->mob;
+
+    bool is_pesa_mob = false;
+    struct pesadelo_st *pesadelo = &GLOBALpesadelo; // IMPLEMENTAR
+    if ((i >= pesadelo->mobs[PesaN][0] && i <= pesadelo->mobs[PesaN][8]) ||
+        (i >= pesadelo->mobs[PesaM][0] && i <= pesadelo->mobs[PesaM][8]) ||
+        (i >= pesadelo->mobs[PesaA][0] && i <= pesadelo->mobs[PesaA][8])) {
+          is_pesa_mob = true;
+        }
+
+    if (npc_mob->max_num_mob == 0) continue;
+    if (mob->name[0] == '\0' || npc_mob->start.position_x == 0) continue;
+    if (npc_mob->minute_generated >= 0 && npc_mob->current_num_mob < npc_mob->max_num_mob) {
+      time_t current_time = time(NULL);
+      for (size_t j = npc_mob->current_num_mob; j < npc_mob->max_num_mob; j++) {
+        int death_id = npc_mob->group[j] - npc_mob->index; // Se der negativo...
+        if (is_pesa_mob) {
+          if (current_time < (npc_mob->death_time[death_id] + 5)) continue;
+        } else {
+          if (current_time < (npc_mob->death_time[death_id] + MOB_RESPAWN_DELAY)) continue;
+        }
+
+        int index = get_spawn_empty_index();
+        if (!index) break;
+
+        short position_x = npc_mob->start.position_x;
+        short position_y = npc_mob->start.position_y;
+
+        if (!update_world(index, &position_x, &position_y, WORLD_MOB)) continue;
+
+        struct mob_server_st *current_mob = &mobs[index];
+        memset(&current_mob->mob, 0, sizeof(struct mob_st));
+        memcpy(&current_mob->mob, &gener_list[i].mob, sizeof(struct mob_st));
+
+        current_mob->mode = MOB_IDLE;
+        current_mob->mob.client_index = index;
+        current_mob->next_action = (clock() + 800);
+        current_mob->spawn_type = SPAWN_TELEPORT;
+        current_mob->generate_index = i;
+        current_mob->mob.last_position.X = position_x;
+        current_mob->mob.last_position.Y = position_y;
+        current_mob->mob.current.X = position_x;
+        current_mob->mob.current.Y = position_y;
+        current_mob->mob.dest.X = position_x;
+        current_mob->mob.dest.Y = position_y;
+        current_mob->death_id = death_id;
+
+        if (is_pesa_mob)
+          current_mob->mob_type = MOB_TYPE_PESA_MOB;
+        else {
+          if (current_mob->mob.cape == 3 && current_mob->mob.b_status.merchant == 0)
+            current_mob->mob_type = MOB_TYPE_GUARD;
+          else if (current_mob->mob.cape == 3 && current_mob->mob.b_status.merchant > 0)
+            current_mob->mob_type = MOB_TYPE_NPC;
+          else
+            current_mob->mob_type = MOB_TYPE_MONSTER;
+        }
+      
+        current_mob->mob.client_index = index;
+        current_mob->mob.status = current_mob->mob.b_status;
+        current_mob->mob.status.speed = 3;
+
+        npc_mob->current_num_mob++;
+
+        get_current_score(index); // IMPLEMENTAR
+
+        current_mob->mob.status.current_hp = current_mob->mob.status.max_hp;
+        current_mob->mob.status.current_mp = current_mob->mob.status.max_mp;
+
+        npc_mob->death_time[death_id] = 0;
+
+        send_grid_mob(index); // IMPLEMENTAR
+
+        current_mob->spawn_type = SPAWN_NORMAL;
+
+        if (index > spawn_count)
+          spawn_count = index;
+      }
+    }
   }
 }

@@ -69,7 +69,7 @@ void
 {
 	memset(users, 0, sizeof(struct user_server_st) * MAX_USERS_PER_CHANNEL);
 	memset(&temp_user, 0, sizeof(struct user_server_st));
-	memset(mobs, 0, sizeof(struct mob_server_st) * 30000);
+	memset(mobs, 0, sizeof(struct mob_server_st) * MAX_SPAWN_LIST);
 	memset(ground_items, 0, sizeof(struct ground_item_st) * 4096);
 	memset(parties, -1, sizeof(struct party_st) * 500);
 
