@@ -92,19 +92,25 @@ struct packet_delete_char {
 
 struct packet_request_enter_world {
 	struct packet_header header;
-	short guild_id;
-	char guild_name[16];
-	char nick[16];
-	char message[255];
-	short channel;
-	short color;
-	unsigned char error;
+	int char_index;
+	char zero[18];
 };
 
 struct packet_enter_world {
 	struct packet_header header;
 	struct position_st position;
 	struct mob_st character;
+};
+
+// MSGS ?
+
+struct packet_create_ground_item {
+	struct packet_header header;
+	struct position_st position;
+	unsigned short item_index;
+	struct item_st item;
+	char rotation;
+	char status;
 };
 
 #endif
