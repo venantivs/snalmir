@@ -210,12 +210,13 @@ spawn_mobs()
     struct mob_st *mob = &npc_mob->mob;
 
     bool is_pesa_mob = false;
-    struct pesadelo_st *pesadelo = &GLOBALpesadelo; // IMPLEMENTAR
-    if ((i >= pesadelo->mobs[PesaN][0] && i <= pesadelo->mobs[PesaN][8]) ||
-        (i >= pesadelo->mobs[PesaM][0] && i <= pesadelo->mobs[PesaM][8]) ||
-        (i >= pesadelo->mobs[PesaA][0] && i <= pesadelo->mobs[PesaA][8])) {
-          is_pesa_mob = true;
-        }
+    // IMPLEMENTAR ISSO AQUI
+    // struct pesadelo_st *pesadelo = &GLOBALpesadelo;
+    // if ((i >= pesadelo->mobs[PesaN][0] && i <= pesadelo->mobs[PesaN][8]) ||
+    //     (i >= pesadelo->mobs[PesaM][0] && i <= pesadelo->mobs[PesaM][8]) ||
+    //     (i >= pesadelo->mobs[PesaA][0] && i <= pesadelo->mobs[PesaA][8])) {
+    //       is_pesa_mob = true;
+    //     }
 
     if (npc_mob->max_num_mob == 0) continue;
     if (mob->name[0] == '\0' || npc_mob->start.position_x == 0) continue;

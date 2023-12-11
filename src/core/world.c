@@ -10,6 +10,8 @@
 #include "../network/server.h"
 #include "world.h"
 
+#include <stdio.h>
+
 short mob_grid[MAX_INIT_ITEM_LIST][MAX_INIT_ITEM_LIST] = { 0 };
 short item_grid[MAX_INIT_ITEM_LIST][MAX_INIT_ITEM_LIST] = { 0 };
 int height_grid[MAX_INIT_ITEM_LIST][MAX_INIT_ITEM_LIST] = { 0 };
@@ -17,11 +19,14 @@ int height_grid[MAX_INIT_ITEM_LIST][MAX_INIT_ITEM_LIST] = { 0 };
 bool
 update_world(int index, short *position_x, short *position_y, int flag)
 {
+  bool empty_grid = false;
   switch(flag) {
   case WORLD_MOB:
     if (index >= MAX_SPAWN_LIST || index < 0) return false;
 
-    bool empty_grid = get_empty_mob_grid(index, position_x, position_y);
+    empty_grid = get_empty_mob_grid(index, position_x, position_y);
+
+    printf("empty_grid: %d\n", empty_grid);
 
     if (empty_grid) {
       mob_grid[mobs[index].mob.current.Y][mobs[index].mob.current.X] = 0;
@@ -33,7 +38,7 @@ update_world(int index, short *position_x, short *position_y, int flag)
     if (index >= MAX_INIT_ITEM_LIST || index < 0)
       return false;
 
-    bool empty_grid = get_empty_item_grid(index, position_x, position_y);
+    empty_grid = get_empty_item_grid(index, position_x, position_y);
 
     if (empty_grid)
     {
