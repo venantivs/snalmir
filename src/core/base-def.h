@@ -513,7 +513,7 @@ struct mob_st {
 	struct position_st dest;
 	struct position_st gema;
 	short evasion;
-	short syub;
+	short sub;
 	int class_master;
 	unsigned short acc_level;
 	struct affect_st affect[MAX_AFFECT];
@@ -560,7 +560,7 @@ struct subcelestial_st {
 	struct status_st b_status;
 	unsigned char face;
 	unsigned char class_info;
-	unsigned char Class_master;
+	unsigned char class_master;
 	int experience;
 	short p_status;
 	short p_master;
