@@ -110,10 +110,10 @@ get_effect_index(const char *effect_name)
 void
 load_item_list()
 {
-  FILE *item_list_fd = fopen("./itemList.csv", "rt");
+  FILE *item_list_fd = fopen("./ItemList.csv", "rt");
 
   if (item_list_fd == NULL)
-    fatal_error("Could not load itemList.csv");
+    fatal_error("Could not load ItemList.csv");
 
   memset(item_list, 0, sizeof(struct item_list_st) * MAX_INIT_ITEM_LIST);
 
