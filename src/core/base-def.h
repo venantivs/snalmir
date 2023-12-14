@@ -36,7 +36,7 @@
 
 #define	IDX_ITEM		10000
 #define	MAX_ITEM		6500
-#define	MAX_ITEMLIST		6500
+#define	MAX_ITEM_LIST		6500
 #define	MAX_ITEM_DATA		6500
 #define	ITEMNAME_LENGTH		28
 
@@ -573,6 +573,7 @@ struct subcelestial_st {
 	struct affect_st affect[MAX_AFFECT];
 };
 
+// POSSIVELMENTE ESSE NOME NÃO FAZ SENTIDO NENHUM
 struct ground_item_st {
 	int item_index;
 	int owner_id;
@@ -611,7 +612,7 @@ struct npcgener_st {
 	struct mob_st mob;
 };
 
-struct itemlist_st {
+struct item_list_st {
 	char name[MAX_SIZENAME];
 	short mesh_1;
 	short texture;
