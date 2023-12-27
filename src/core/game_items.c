@@ -19,7 +19,7 @@ struct ground_item_st init_list[MAX_INIT_ITEM_LIST];
 int init_index, max_item_load, max_init_item;
 char effect_name_list[MAX_EFFECT_INDEX][MAX_EFFECT_NAME];
 
-bool
+void
 load_item_effect()
 {
   FILE *item_effect_fd = fopen("./ItemEffect.h", "rt");
@@ -48,8 +48,6 @@ load_item_effect()
     }
   }
   fclose(item_effect_fd);
-
-  return true;
 }
 
 void
@@ -168,5 +166,5 @@ load_game_items()
   load_item_effect();
   load_item_list();
   load_init_items();
-  // LOAD CUBO
+  // TODO: LOAD CUBO
 }

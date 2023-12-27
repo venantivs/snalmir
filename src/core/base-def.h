@@ -28,6 +28,7 @@
 #define	MAX_NPCGENERATOR		8192
 #define MAX_SPAWN_LIST 			30000
 #define MAX_INIT_ITEM_LIST 	4096
+#define MAX_SKILL_DATA			104
 #define	MAX_STORAGE					128
 #define	MAX_CLAN						26
 #define	MAX_SEGMENT					5

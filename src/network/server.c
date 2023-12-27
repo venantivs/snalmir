@@ -26,6 +26,7 @@
 #include "../core/utils.h"
 #include "../core/user.h"
 #include "../core/game_items.h"
+#include "../core/game_skills.h"
 #include "socket-utils.h"
 #include "packet-handler.h"
 #include "../general-config.h"
@@ -99,6 +100,7 @@ void
 		fatal_error("setitimer");
 
 	load_game_items();
+	load_game_skills();
 	load_base_char_mobs();
 	load_npcs();
 	start_server();
