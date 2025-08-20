@@ -12,7 +12,9 @@ extern struct mob_st baby_list[MAX_MOB_BABY];
 
 void load_npcs();
 void read_npc_generator();
-void load_npc(const char*, int);
+void load_npc(const char *name, int index);
 void load_mob_baby();
+void spawn_mobs();
+void action_mob(int sec_counter);
 
 #endif

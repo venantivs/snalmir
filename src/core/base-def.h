@@ -295,6 +295,8 @@
 #define Effect_LevelUp		14,3
 #define Effect_ComemorarRVR	17,1
 
+#define	SAVE_TIMER				70
+
 // Estruturas Base
 
 struct item_st {
@@ -550,8 +552,7 @@ struct teleport_st {
 };
 
 struct gener_position_st {
-	short position_x;
-	short position_y;
+	struct position_st position;
 	short range;
 	short wait;
 	char action[96];
@@ -582,8 +583,7 @@ struct ground_item_st {
 	clock_t drop_time;
 	short rotation;
 	short status;
-	short position_x;
-	short position_y;
+	struct position_st position;
 };
 
 struct target_st {
@@ -670,6 +670,16 @@ struct guildzone_st {
 	int guilda_war_x, guilda_war_y;
 	int guildb_war_x, guildb_war_y;
 	int tax;
+};
+
+struct init_item_st {
+	int index;
+	int owner_id;
+	struct item_st item;
+	clock_t drop_time;
+	short rotation;
+	short status;
+	struct position_st position;
 };
 
 #endif

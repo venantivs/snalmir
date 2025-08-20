@@ -18,7 +18,7 @@ struct skill_data_st skill_data[MAX_SKILL_DATA];
 void
 load_skill_data()
 {
-  FILE *skill_data_fd = fopen("./SkillData.csv", "rt");
+  FILE *skill_data_fd = fopen("./bin/SkillData.csv", "rt");
 
   if (skill_data_fd == NULL)
     fatal_error("Could not load SkillData.csv");

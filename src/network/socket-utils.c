@@ -338,7 +338,7 @@ send_client_string_message(const char* message, int user_index)
 	string_message.header.operation_code = 0x101;
 	strncpy(string_message.string_message, message, 96);
 
-	send_one_message((unsigned char*)&string_message, xlen(&string_message), user_index);
+	send_one_message((unsigned char*) &string_message, xlen(&string_message), user_index);
 }
 
 void

@@ -18,7 +18,7 @@
 #define MOB_FLEE	7
 #define MOB_ROAM	8
 #define MOB_DEAD        9
-#define MOB_MARCKET	10
+#define MOB_MARKET	10
 
 #define MOB_TYPE_SUMMON		1
 #define MOB_TYPE_GUARD		2
@@ -82,5 +82,12 @@ void load_base_char_mobs();
 void load_mob(int, int);
 void save_mob(int, bool, int);
 void load_selchar(struct mob_st _char[4], struct char_list_st *);
+void clear_property(struct mob_server_st *mob);
+int standby_processor(struct mob_server_st *mob);
+void movement(struct mob_server_st *mob, int x, int y, int type);
+void processor_sec_timer_mob(struct mob_server_st *mob, int sec_counter);
+
+bool is_dead(struct mob_server_st mob);
+bool is_summon(struct mob_server_st mob);
 
 #endif

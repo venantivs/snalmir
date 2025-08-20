@@ -42,7 +42,7 @@ read_npc_generator()
 {
   FILE *npc_gener_fd = NULL;
 
-  npc_gener_fd = fopen("NPCGener.txt", "rt");
+  npc_gener_fd = fopen("./bin/NPCGener.txt", "rt");
 
   if (npc_gener_fd == NULL)
     fatal_error("Could not load NPCGener.txt");
@@ -93,23 +93,22 @@ read_npc_generator()
           npc_mob->minute_generated = value;
         else if (strcmp(cmd, "MaxNumMob") == 0)
           npc_mob->max_num_mob = value;
-        else if (strcmp(cmd, "StartX") == 0)
-        {
-          if (npc_mob->mob.name != NULL)
-            npc_mob->start.position_x = value;
+        else if (strcmp(cmd, "StartX") == 0) {
+          if (npc_mob->mob.name[0] != '\0')
+            npc_mob->start.position.X = value;
           else
-            npc_mob->start.position_x = 0;
+            npc_mob->start.position.X = 0;
         }
         else if (strcmp(cmd, "StartY") == 0)
-          npc_mob->start.position_y = value;
+          npc_mob->start.position.Y = value;
         else if (strcmp(cmd, "StartRange") == 0)
           npc_mob->start.range = value;
         else if (strcmp(cmd, "StartWait") == 0)
           npc_mob->start.wait = value;
         else if (strcmp(cmd, "DestX") == 0)
-          npc_mob->dest.position_x = value;
+          npc_mob->dest.position.X = value;
         else if (strcmp(cmd, "DestY") == 0)
-          npc_mob->dest.position_y = value;
+          npc_mob->dest.position.Y = value;
         else if (strcmp(cmd, "DestRange") == 0)
           npc_mob->dest.range = value;
         else if (strcmp(cmd, "DestWait") == 0)
@@ -134,7 +133,7 @@ load_npc(const char *name, int index)
   FILE *npc_fd = NULL;
   char file_path[1024] = { 0 };
 
-  sprintf(file_path, "./npc/%s", name);
+  sprintf(file_path, "./bin/npc/%s", name);
 
   npc_fd = fopen(file_path, "rb");
 
@@ -180,7 +179,7 @@ load_mob_baby()
     FILE *mob_baby_fd = NULL;
     char file_path[1024] = { 0 };
 
-    snprintf(file_path, 1024, "./npc_base/%s", baby_mob_name[i]);
+    snprintf(file_path, 1024, "./bin/npc_base/%s", baby_mob_name[i]);
 
     struct mob_st *npc_mob = &baby_list[i];
     struct mob_st new_mob = { 0 };
@@ -218,8 +217,12 @@ spawn_mobs()
     //       is_pesa_mob = true;
     //     }
 
-    if (npc_mob->max_num_mob == 0) continue;
-    if (mob->name[0] == '\0' || npc_mob->start.position_x == 0) continue;
+    if (npc_mob->max_num_mob == 0)
+      continue;
+
+    if (mob->name[0] == '\0' || npc_mob->start.position.X == 0)
+      continue;
+
     if (npc_mob->minute_generated >= 0 && npc_mob->current_num_mob < npc_mob->max_num_mob) {
       time_t current_time = time(NULL);
       for (size_t j = npc_mob->current_num_mob; j < npc_mob->max_num_mob; j++) {
@@ -231,10 +234,11 @@ spawn_mobs()
         }
 
         int index = get_spawn_empty_index();
-        if (!index) break;
+        if (!index)
+          break;
 
-        short position_x = npc_mob->start.position_x;
-        short position_y = npc_mob->start.position_y;
+        short position_x = npc_mob->start.position.X;
+        short position_y = npc_mob->start.position.Y;
 
         if (!update_world(index, &position_x, &position_y, WORLD_MOB)) continue;
 
@@ -272,14 +276,14 @@ spawn_mobs()
 
         npc_mob->current_num_mob++;
 
-        get_current_score(index); // IMPLEMENTAR
+        get_current_score(index);
 
         current_mob->mob.status.current_hp = current_mob->mob.status.max_hp;
         current_mob->mob.status.current_mp = current_mob->mob.status.max_mp;
 
         npc_mob->death_time[death_id] = 0;
 
-        send_grid_mob(index); // IMPLEMENTAR
+        send_grid_mob(index);
 
         current_mob->spawn_type = SPAWN_NORMAL;
 
@@ -288,4 +292,49 @@ spawn_mobs()
       }
     }
   }
+}
+
+void
+action_mob(int sec_counter)
+{
+  short newPosX = 0;
+	short newPosY = 0;
+
+	for (size_t i = (BASE_MOB + 1); i <= spawn_count; i++) {
+    struct mob_server_st *mob = &mobs[i];
+
+		if (is_dead(*mob))
+      continue;
+		else if (clock() > mob->next_action) {
+			int action = standby_processor(mob);
+			switch (action) {
+			case ACTION_MOVE:
+				newPosX = (gener_list[mob->generate_index].dest.position.X + (rand() % 3));
+				newPosY = (gener_list[mob->generate_index].dest.position.Y + (rand() % 3));
+				movement(mob, newPosX, newPosY, MOVE_NORMAL);
+				break;
+			
+			case ACTION_MOVE_RAND:
+				newPosX = (gener_list[mob->generate_index].start.position.X + (rand() % 3));
+				newPosY = (gener_list[mob->generate_index].start.position.Y + (rand() % 3));
+				movement(mob, newPosX, newPosY, MOVE_NORMAL);
+				break;
+
+			case ACTION_MOVE_TO_SUMMONER:
+				newPosX = (mobs[mob->summoner].mob.current.X);
+				newPosY = (mobs[mob->summoner].mob.current.Y);
+				movement(mob, newPosX, newPosY, MOVE_TELEPORT);
+				break;
+
+			case ACTION_BATTLE:
+        fprintf(stderr, "ENTROU NO ACTION BATTLE PROCESSOR, NÃO DEVERIA ESTAR AQUI!!!!");
+        // TODO: IMPLEMENTAR
+				//c->BattleProcessor();
+				break;
+			}
+		}
+
+		if (mob->mob.status.merchant == 0)
+			processor_sec_timer_mob(mob, sec_counter);
+	}
 }

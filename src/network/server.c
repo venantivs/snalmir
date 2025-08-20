@@ -54,6 +54,10 @@ static void
 min_timer()
 {
 	min_counter++;
+
+	if (min_counter % 10 == 0) {
+		// Clear quests
+	}
 }
 
 static void
@@ -62,8 +66,44 @@ sec_timer()
 	sec_counter++;
 	current_time = (unsigned long) time(NULL);
 
+	spawn_mobs();
+	action_mob(sec_counter);
+
 	if (sec_counter % 60 == 0)
 		min_timer();
+
+	for (size_t i = 1; i <= MAX_USERS_PER_CHANNEL; i++) {
+		struct user_server_st *user = &users[i];
+		
+		if (user->server_data.user_close) {
+			send_all_messages(i);
+			close_user(i);
+			continue;
+		}
+
+		if (user->server_data.mode < USER_SELCHAR)
+			continue;
+
+		if (user->server_data.mode == USER_PLAY)
+			processor_sec_timer_mob(&mobs[i], sec_counter);
+
+		time_t now = time(NULL);
+
+		if (now < user->save_time + SAVE_TIMER + abs(rand() % 3))
+			continue;
+
+		if (user->server_data.mode == USER_SELCHAR)
+			save_client(i);
+		
+		if (user->server_data.mode >= USER_PLAY) { 
+			save_client(i);
+			save_character(i, 0);
+		}
+		
+		user->save_time = now;
+	}
+
+	// TODO: IMPLEMENT GROUND ITEMS
 }
 
 void
@@ -209,8 +249,7 @@ start_server()
 				while (true) {
 					int user_index = get_empty_user();
 
-					/* Checar se recv_buffer e send_buffer são NULL pode ser inútil uma vez que ambos são estáticos. */
-					if (user_index < 0 || user_index >= MAX_USERS_PER_CHANNEL || users[user_index].server_data.buffer.recv_buffer == NULL || users[user_index].server_data.buffer.send_buffer == NULL) {
+					if (user_index < 0 || user_index >= MAX_USERS_PER_CHANNEL) {
 						/* DEU RUIM FILHO */
 						fprintf(stderr, "Não foi possível aceitar o usuário.\n");
 						continue;

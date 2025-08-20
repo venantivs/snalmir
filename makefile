@@ -1,7 +1,7 @@
 MAKEFLAGS += --silent
 
 TARGET = snalmir
-LIBS = -lpthread
+LIBS = -lpthread -lm
 CC = gcc
 CFLAGS = -Wall
 
@@ -15,12 +15,13 @@ HEADERS = $(shell find . -name *.h)
 OBJECTS = $(patsubst %.c, %.o, $(SOURCE))
 
 %.o: %.c $(HEADERS)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@ -g
 
 .PRECIOUS: $(TARGET) $(OBJECTS)
 
 $(TARGET): $(OBJECTS)
 	$(CC) $(OBJECTS) -Wall $(LIBS) -o bin/$@
+	-rm -f $(OBJECTS)
 
 dir:
 	mkdir -p bin/

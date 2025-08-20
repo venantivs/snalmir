@@ -10,9 +10,16 @@
 extern short mob_grid[MAX_INIT_ITEM_LIST][MAX_INIT_ITEM_LIST];
 extern short item_grid[MAX_INIT_ITEM_LIST][MAX_INIT_ITEM_LIST];
 extern int height_grid[MAX_INIT_ITEM_LIST][MAX_INIT_ITEM_LIST];
+extern struct guildzone_st guild_zone[MAX_GUILD_ZONE];
 
 bool update_world(int, short *, short *, int);
 bool get_empty_mob_grid(int, short *, short *);
 bool get_empty_item_grid(int, short *, short *);
+
+void read_height_map();
+bool initialize_ground_items();
+void read_teleport();
+void read_guild_zone();
+bool remove_object(int mob_index, struct position_st position, int flag);
 
 #endif

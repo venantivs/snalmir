@@ -22,7 +22,7 @@ char effect_name_list[MAX_EFFECT_INDEX][MAX_EFFECT_NAME];
 void
 load_item_effect()
 {
-  FILE *item_effect_fd = fopen("./ItemEffect.h", "rt");
+  FILE *item_effect_fd = fopen("./bin/ItemEffect.h", "rt");
 
   if (item_effect_fd == NULL)
     fatal_error("Could not load ItemEffect.h");
@@ -53,7 +53,7 @@ load_item_effect()
 void
 load_init_items()
 {
-  FILE *init_item_fd = fopen("./InitItem.csv", "rt");
+  FILE *init_item_fd = fopen("./bin/InitItem.csv", "rt");
 
   if (init_item_fd == NULL)
     fatal_error("Could not load InitItem.csv");
@@ -78,7 +78,7 @@ load_init_items()
     memset(&item, 0, sizeof(struct item_st));
     memset(&init_list[init_index], 0, sizeof(struct ground_item_st));
 
-    int read_fields = sscanf(tmp, "%hd %hd %hd %hd", &item.item_id, &init_list[init_index].position_x, &init_list[init_index].position_y, &init_list[init_index].rotation);
+    int read_fields = sscanf(tmp, "%hd %hd %hd %hd", &item.item_id, &init_list[init_index].position.X, &init_list[init_index].position.Y, &init_list[init_index].rotation);
     if (read_fields < 4) continue;
 
     init_list[init_index].item_index = init_index;
@@ -105,10 +105,23 @@ get_effect_index(const char *effect_name)
 	return atoi(effect_name);
 }
 
+short
+get_effect_value(short item_id, char effect)
+{
+	if (item_id >= 0 && item_id <= MAX_ITEM_LIST) {
+		for (size_t i = 0; i < MAX_EFFECT; i++) {
+      if (item_list[item_id].effect[i].index == effect)
+			  return item_list[item_id].effect[i].value;
+    }
+	}
+
+	return 0;
+}
+
 void
 load_item_list()
 {
-  FILE *item_list_fd = fopen("./ItemList.csv", "rt");
+  FILE *item_list_fd = fopen("./bin/ItemList.csv", "rt");
 
   if (item_list_fd == NULL)
     fatal_error("Could not load ItemList.csv");

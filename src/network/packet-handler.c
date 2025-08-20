@@ -66,6 +66,8 @@ segregate_packet(unsigned char *packet, int user_index)
 		return delete_char((struct packet_request_delete_char *) header, user_index);
 	case 0x213:
 		return enter_world((struct packet_request_enter_world *) header, user_index);
+	default:
+		printf("PACKET NÃO IMPLEMENTADO: %hhx\n", header->operation_code);
 	}
 
 	return false;

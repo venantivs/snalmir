@@ -10,4 +10,6 @@ extern struct ground_item_st init_list[MAX_INIT_ITEM_LIST];
 
 void load_game_items();
 
+short get_effect_value(short item_id, char effect);
+
 #endif

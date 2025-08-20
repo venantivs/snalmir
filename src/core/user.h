@@ -13,6 +13,8 @@ enum user_mode { USER_EMPTY, USER_ACCEPT, USER_LOGIN, USER_NUMERIC_PASSWORD,
 		 USER_SELCHAR, USER_CHARWAIT, USER_CREWAIT, USER_DELWAIT, 
 		 USER_PLAY, USER_SAVING_TO_QUIT };
 
+enum account_mode { ACCOUNT_EMPTY, ACCOUNT_SELCHAR, ACCOUNT_INGAME };
+
 struct user_server_buffering_st {
 	unsigned char recv_buffer[RECV_BUFFER_SIZE];
 	unsigned char send_buffer[SEND_BUFFER_SIZE];
@@ -74,7 +76,7 @@ struct profile_file_st {
 	int cash;
 	unsigned int sel_char;
 	struct item_st cargo[128];
-	int Mode;
+	int mode;
 };
 
 struct account_file_st {
@@ -92,6 +94,8 @@ bool  login_user_numeric(struct packet_request_numeric_password*, int);
 bool	create_char(struct packet_request_create_char*, int);
 bool	delete_char(struct packet_request_delete_char*, int);
 bool	enter_world(struct packet_request_enter_world*, int);
+void 	save_client(int user_index);
+void 	save_character(int user_index, int flag);
 bool 	close_user(int);
 
 #endif
