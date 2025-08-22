@@ -45,6 +45,7 @@ struct mob_st base_char_mobs[MOB_PER_ACCOUNT];
 unsigned long current_time;
 int current_weather;
 
+bool loading_ready = false;
 int sec_counter = 0;
 int min_counter = 0;
 
@@ -63,6 +64,10 @@ min_timer()
 static void
 sec_timer()
 {
+	// Waits for all components to be loaded first.
+	if (!loading_ready)
+		return;
+
 	sec_counter++;
 	current_time = (unsigned long) time(NULL);
 
@@ -236,6 +241,8 @@ start_server()
 	
 	if (listen(listen_socket_fd, 16) < 0)
 		fatal_error("listen");
+
+	loading_ready = true;
 
 	while (true) {
 		if ((nfds = epoll_wait(epfd, events, 20, 500)) < 0)

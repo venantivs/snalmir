@@ -443,7 +443,7 @@ enter_world(struct packet_request_enter_world *request_enter_world, int user_ind
 	memcpy(character_mob, &enter_world.character, sizeof(struct mob_st));
 
 	character->mob.client_index = (short) user_index;
-	users[user_index].server_data.mode = 22; //USER_PLAY;
+	users[user_index].server_data.mode = USER_PLAY;
 	mobs[user_index].mode = MOB_USER;
 
 	get_bonus_score_points(character_mob);
@@ -485,8 +485,8 @@ enter_world(struct packet_request_enter_world *request_enter_world, int user_ind
 	get_create_mob(user_index, user_index);
 	send_grid_mob(user_index);
 
-	time_t current_time = time(NULL);
-	struct tm *no = localtime(&current_time);
+	// time_t current_time = time(NULL);
+	// struct tm *no = localtime(&current_time);
 
 	// int mount_id = character_mob->equip[MOUNT_SLOT].item_id;
 	// if (mount_id >= 2330 && mount_id <= 2359)

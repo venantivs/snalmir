@@ -14,23 +14,23 @@
 #define MOB_IDLE        3
 #define MOB_PEACE       4
 #define MOB_COMBAT      5
-#define MOB_RETURN	6
-#define MOB_FLEE	7
-#define MOB_ROAM	8
+#define MOB_RETURN			6
+#define MOB_FLEE				7
+#define MOB_ROAM				8
 #define MOB_DEAD        9
-#define MOB_MARKET	10
+#define MOB_MARKET			10
 
-#define MOB_TYPE_SUMMON		1
-#define MOB_TYPE_GUARD		2
-#define MOB_TYPE_MONSTER 	3
-#define MOB_TYPE_USER		4
-#define MOB_TYPE_NPC		5
-#define MOB_GUARD_PESA		6
-#define MOB_TYPE_AGUA		7
-#define MOB_TYPE_PESA_NPC	8
-#define MOB_TYPE_PESA_MOB	9
+#define MOB_TYPE_SUMMON			1
+#define MOB_TYPE_GUARD			2
+#define MOB_TYPE_MONSTER 		3
+#define MOB_TYPE_USER				4
+#define MOB_TYPE_NPC				5
+#define MOB_GUARD_PESA			6
+#define MOB_TYPE_AGUA				7
+#define MOB_TYPE_PESA_NPC		8
+#define MOB_TYPE_PESA_MOB		9
 #define MOB_TYPE_PESA_BOSS	10
-#define MOB_TYPE_CUBO		11
+#define MOB_TYPE_CUBO				11
 
 struct mob_server_st {
 	struct mob_st mob;

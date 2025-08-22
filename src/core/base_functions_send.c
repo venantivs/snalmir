@@ -444,3 +444,19 @@ send_remove_mob(int mob_index, int to_remove_index, int delete_type)
 
 	send_grid_multicast_with_packet(0, mobs[mob_index].mob.current.X, mobs[mob_index].mob.current.Y, (unsigned char*) &remove_mob_signal);
 }
+
+void
+send_teleport(int mob_index, struct position_st destination)
+{
+	struct mob_st *mob = &mobs[mob_index].mob;
+
+	if (mob->current.X == destination.X && mob->current.Y == destination.Y)
+		return;
+
+	update_world(mob_index, &destination.X, &destination.Y, WORLD_MOB);
+
+	mob->last_position.X = mob->current.X;
+	mob->last_position.Y = mob->current.Y;
+
+	get_action(mob_index, destination.X, destination.Y, MOVE_TELEPORT, NULL);
+}

@@ -25,7 +25,7 @@ int BaseSIDCHM[4][6] = {
 	{ 8, 4, 7, 6, 80, 45 }, // Transknight
 	{ 5, 8, 5, 5, 60, 65 }, // Foema
 	{ 6, 6, 9, 5, 70, 55 }, // BeastMaster
-	{ 8, 9, 13, 6, 75, 60 }  // Hunter
+	{ 8, 9, 13, 6, 75, 60 } // Hunter
 };
 
 size_t
@@ -56,7 +56,6 @@ get_create_item(int item_index)
 	send_grid_item(item_index, &create_ground_item);
 }
 
-// TODO: No need to be a pointer
 int
 get_item_id_and_effect(struct item_st item, int mount)
 {
@@ -986,14 +985,13 @@ get_current_score(int user_index)
 	if (left_weapon_id >= 0 || left_weapon_id < MAX_ITEM_LIST) {
 		int sanc = get_item_sanc(&user->equip[ARMA2_SLOT]);
 		
-		if (sanc >= 230)
+		if (sanc >= 230) 
 			sanc = (10 + ((sanc - 230) / 4));
 		
-			if (sanc >= 9) {
+		if (sanc >= 9) {
 			user->weapon_damage += (40 * (sanc - 8));
 			atk_inc += (40 * (sanc - 8));
-		}
-				
+		}		
 	}
 
 	for (size_t i = 1; i < 5; i++) {

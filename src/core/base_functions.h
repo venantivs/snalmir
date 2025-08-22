@@ -34,5 +34,6 @@ void send_create_mob(int user_index, int mob_index);
 void send_remove_mob(int mob_index, int to_remove_index, int delete_type);
 void send_grid_multicast(short position_x, short position_y, void *packet, int index);
 void send_grid_multicast_with_packet(int mob_index, short position_x, short position_y, unsigned char *packet);
+void send_teleport(int mob_index, struct position_st destination);
 
 #endif

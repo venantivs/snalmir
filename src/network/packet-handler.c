@@ -14,6 +14,7 @@
 #include "server.h"
 #include "packet-def.h"
 #include "packet-handler.h"
+#include "../core/client_packets.h"
 
 bool
 segregate_packet(unsigned char *packet, int user_index)
@@ -36,7 +37,7 @@ segregate_packet(unsigned char *packet, int user_index)
 		
 		users[user_index].server_data.mode = USER_LOGIN;
 
-		struct packet_request_login *login_request = (struct packet_request_login *)header;
+		struct packet_request_login *login_request = (struct packet_request_login *) header;
 
 		if (!login_user(login_request, user_index))
 			return false;
@@ -66,8 +67,15 @@ segregate_packet(unsigned char *packet, int user_index)
 		return delete_char((struct packet_request_delete_char *) header, user_index);
 	case 0x213:
 		return enter_world((struct packet_request_enter_world *) header, user_index);
+	case 0x3ae:
+		return request_logout_char(user_index);
+	case 0x215:
+		return request_return_char_list(user_index);
+	case 0x366:
+	case 0x367:
+		return request_movement((struct packet_request_action *) header, user_index);
 	default:
-		printf("PACKET NÃO IMPLEMENTADO: %hhx\n", header->operation_code);
+		printf("PACKET NÃO IMPLEMENTADO: %x\n", header->operation_code);
 	}
 
 	return false;

@@ -53,20 +53,19 @@ read_npc_generator()
   while(fgets(tmp, sizeof(tmp), npc_gener_fd)) {
     if (tmp[0] == '#') {
       int ret = sscanf(tmp, "#\t[%04d]", &index);
-      if (ret != 1 || index < 0 || index >= MAX_NPCGENER)
-      {
+      if (ret != 1 || index < 0 || index >= MAX_NPCGENER) {
         index = -1;
         continue;
       }
 
       for(; index < MAX_NPCGENER; index++)
-      if (gener_list[index].mode == NPCG_EMPTY)
-      {
+      if (gener_list[index].mode == NPCG_EMPTY) {
         gener_list[index].mode = NPCG_CHARGED;
         break;
       }
 
-      if (index == MAX_NPCGENER) break;
+      if (index == MAX_NPCGENER)
+        break;
 
       continue;
     }
@@ -79,13 +78,12 @@ read_npc_generator()
     if (ret != 2)
       continue;
 
-    if (index != -1)
-    {
+    if (index != -1) {
       struct npcgener_st *npc_mob = &gener_list[index];
-      if (strcmp(cmd, "Mob") == 0)
+
+      if (strcmp(cmd, "Mob") == 0) {
         load_npc(val, index);
-      else
-      {
+      } else {
         int value = atoi(val);
         if (strcmp(cmd, "RouteType") == 0)
           npc_mob->route_type = value;
