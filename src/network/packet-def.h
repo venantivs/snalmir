@@ -111,15 +111,15 @@ struct packet_spawn_info {
 	struct packet_header header;
 	struct position_st position;
 	unsigned short client_id;
-	char name[16];
+	char name[12];
 	unsigned char chaos_points;
 	unsigned char current_kill;
-	unsigned char total_kill;
+	unsigned short total_kill;
 	unsigned short item_refine[16];
 	struct {
 		unsigned char time;
 		unsigned char index;
-	} affect[32];
+	} affect[16];
 	unsigned short guild_index; // 100
 	struct status_st status;
 	struct {
@@ -140,6 +140,14 @@ struct packet_create_ground_item {
 	struct item_st item;
 	char rotation;
 	char status;
+};
+
+// 334H
+struct packet_request_command
+{
+	struct packet_header header;
+	char e_command[16];
+	char e_value[100];
 };
 
 // 336H
@@ -179,6 +187,56 @@ struct packet_refresh_etc
 	short skills;
 	short magic;
 	int gold;
+};
+
+// 39DH
+struct packet_attack_single
+{
+	struct packet_header header;
+	short attacker_id; // Id de quem realiza o ataque
+	short attack_count;
+	struct position_st attacker_pos; // Posicao X e Y de quem Ataca
+	struct position_st target_pos; // Posicao X e Y de quem Sofre o Ataque
+	short skill_index; // Id da skill usada
+	short current_mp; // Mp atual de quem Ataca
+	char motion;
+	char skill_parm;
+	char flag_local;
+	char double_critical; // 0 para critico Simples, 1 para critico Duplo
+	int hold;
+	int current_exp;
+	short required_mp; // Mp necessario para usar a Skill
+	short rsv;
+	struct target_st target;
+};
+
+// 338H
+struct packet_dead_mob
+{
+	struct packet_header header;
+	int hold;
+	short killed_index;
+	short killer_index;
+	unsigned int experience;
+};
+
+// 3A2H
+struct packet_send_effect
+{
+	struct packet_header header;
+	struct position_st min;
+	struct position_st max;
+	short effect_id;
+	short time;
+};
+
+// 182H
+struct packet_create_item
+{
+	struct packet_header header;
+	short inventory_type;
+	short inventory_slot;
+	struct item_st item;
 };
 
 // 3B9H

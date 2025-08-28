@@ -2,7 +2,7 @@
  * Licença: GPLv3
  * Autor: callixtvs
  * Data: Julho de 2020
- * Atualização: Dezembro de 2020
+ * Atualização: Agosto de 2025
  * Arquivo: network/server.c
  * Descrição: Arquivo onde o servidor principal é propriamente inicializado, recebe e envia pacotes.
  * TODO: Implementar error handling muito rigoroso.
@@ -37,6 +37,7 @@ struct user_server_st temp_user;
 struct mob_server_st mobs[30000];
 struct ground_item_st ground_items[4096];
 struct party_st parties[500];
+struct settings_st server_settings;
 
 /* DB */
 struct account_file_st users_db[MAX_USERS_PER_CHANNEL];
@@ -119,6 +120,7 @@ void
 	memset(mobs, 0, sizeof(struct mob_server_st) * MAX_SPAWN_LIST);
 	memset(ground_items, 0, sizeof(struct ground_item_st) * 4096);
 	memset(parties, -1, sizeof(struct party_st) * 500);
+	memset(&server_settings, 0, sizeof(struct settings_st));
 
 	/* DB */
 	memset(users_db, 0, sizeof(struct account_file_st) * MAX_USERS_PER_CHANNEL);
@@ -148,6 +150,7 @@ void
 	load_game_skills();
 	load_base_char_mobs();
 	load_npcs();
+	printf("DONE LOADING!\n");
 	start_server();
 
 	return NULL;
@@ -187,7 +190,7 @@ get_user_index_from_socket(int socket_fd)
 	}
 
 	/* Implementação burra, adiciona complexidade O(n) (((aparentemente))) desnecessária a cada evento do epoll. */
-	for (size_t i = 0; i < MAX_USERS_PER_CHANNEL; i++)
+	for (size_t i = 1; i < MAX_USERS_PER_CHANNEL; i++)
 		if (users[i].server_data.socket_fd == socket_fd)
 			return i;
 
@@ -197,7 +200,7 @@ get_user_index_from_socket(int socket_fd)
 static int
 get_empty_user(void)
 {
-	for (size_t i = 0; i < MAX_USERS_PER_CHANNEL; i++)
+	for (size_t i = 1; i < MAX_USERS_PER_CHANNEL; i++)
 		if (users[i].server_data.mode == USER_EMPTY)
 			return i;
 

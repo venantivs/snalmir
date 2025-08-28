@@ -207,7 +207,7 @@ spawn_mobs()
     struct mob_st *mob = &npc_mob->mob;
 
     bool is_pesa_mob = false;
-    // IMPLEMENTAR ISSO AQUI
+    // TODO: IMPLEMENTAR ISSO AQUI
     // struct pesadelo_st *pesadelo = &GLOBALpesadelo;
     // if ((i >= pesadelo->mobs[PesaN][0] && i <= pesadelo->mobs[PesaN][8]) ||
     //     (i >= pesadelo->mobs[PesaM][0] && i <= pesadelo->mobs[PesaM][8]) ||
@@ -226,9 +226,11 @@ spawn_mobs()
       for (size_t j = npc_mob->current_num_mob; j < npc_mob->max_num_mob; j++) {
         int death_id = npc_mob->group[j] - npc_mob->index; // Se der negativo...
         if (is_pesa_mob) {
-          if (current_time < (npc_mob->death_time[death_id] + 5)) continue;
+          if (current_time < (npc_mob->death_time[death_id] + 5))
+            continue;
         } else {
-          if (current_time < (npc_mob->death_time[death_id] + MOB_RESPAWN_DELAY)) continue;
+          if (current_time < (npc_mob->death_time[death_id] + MOB_RESPAWN_DELAY))
+            continue;
         }
 
         int index = get_spawn_empty_index();
@@ -238,7 +240,10 @@ spawn_mobs()
         short position_x = npc_mob->start.position.X;
         short position_y = npc_mob->start.position.Y;
 
-        if (!update_world(index, &position_x, &position_y, WORLD_MOB)) continue;
+        if (!update_world(index, &position_x, &position_y, WORLD_MOB)) {
+          fatal_error("Erro ao executar #update_world.\n");
+          continue;
+        }
 
         struct mob_server_st *current_mob = &mobs[index];
         memset(&current_mob->mob, 0, sizeof(struct mob_st));
@@ -257,9 +262,9 @@ spawn_mobs()
         current_mob->mob.dest.Y = position_y;
         current_mob->death_id = death_id;
 
-        if (is_pesa_mob)
+        if (is_pesa_mob) {
           current_mob->mob_type = MOB_TYPE_PESA_MOB;
-        else {
+        } else {
           if (current_mob->mob.cape == 3 && current_mob->mob.b_status.merchant == 0)
             current_mob->mob_type = MOB_TYPE_GUARD;
           else if (current_mob->mob.cape == 3 && current_mob->mob.b_status.merchant > 0)
@@ -301,9 +306,9 @@ action_mob(int sec_counter)
 	for (size_t i = (BASE_MOB + 1); i <= spawn_count; i++) {
     struct mob_server_st *mob = &mobs[i];
 
-		if (is_dead(*mob))
+		if (is_dead(*mob)) {
       continue;
-		else if (clock() > mob->next_action) {
+    } else if (clock() > mob->next_action) {
 			int action = standby_processor(mob);
 			switch (action) {
 			case ACTION_MOVE:
@@ -325,9 +330,7 @@ action_mob(int sec_counter)
 				break;
 
 			case ACTION_BATTLE:
-        fprintf(stderr, "ENTROU NO ACTION BATTLE PROCESSOR, NÃO DEVERIA ESTAR AQUI!!!!");
-        // TODO: IMPLEMENTAR
-				//c->BattleProcessor();
+        battle_processor(mob);
 				break;
 			}
 		}

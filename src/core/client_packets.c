@@ -7,6 +7,9 @@
  * Descrição: Módulo onde se encontra as funções chamadas diretamente pelo direcionamento de packets
  */
 
+#include <stdio.h>
+#include <string.h>
+
 #include "client_packets.h"
 #include "../network/server.h"
 #include "../network/socket-utils.h"
@@ -66,6 +69,176 @@ request_logout_char(int user_index)
 
 bool
 request_return_char_list(int user_index) {
+	return true;
+}
+
+bool
+request_command(struct packet_request_command *request_command, int user_index)
+{
+	struct mob_server_st *mob = &mobs[user_index];
+	
+	char tmp[100];
+	request_command->e_value[99] = '\0';
+	request_command->e_command[15] = '\0';
+
+	printf("COMMAND: %s | VALUE: %s\n", request_command->e_command, request_command->e_value);
+
+	if (strcmp(request_command->e_command, "day") == 0) {
+		time_t nowraw;
+		struct tm *now;
+		int day, mom;
+
+		nowraw = time(NULL);
+		now = localtime(&nowraw);
+
+		mom = now->tm_mon;
+		day = now->tm_mday;
+
+		sprintf(tmp, "!#%02d  %02d", day, mom);
+		send_client_string_message(tmp, user_index);
+		return true;
+	} else if (strcmp(request_command->e_command, "nig") == 0) {
+		time_t nowraw;
+		struct tm *now;
+		int hour, min, sec;
+
+		nowraw = time(NULL);
+		now = localtime(&nowraw);
+
+		hour = now->tm_hour;
+		min = now->tm_min;
+		sec = now->tm_sec;
+
+		sprintf(tmp, "!!%02d%02d%02d", hour, min, sec);
+		send_client_string_message(tmp, user_index);
+		return true;
+	} else if (strcmp(request_command->e_command, "eff") == 0) {
+		int eff, time;
+		sscanf(request_command->e_value, "%d %d", &eff, &time);
+
+		struct position_st min, max;
+		min.X = mob->mob.current.X - 3;
+		min.Y = mob->mob.current.Y - 3;
+		max.X = mob->mob.current.X + 3;
+		max.Y = mob->mob.current.Y + 3;
+
+		send_env_effect(min, max, eff, time);
+		send_client_string_message("eff", user_index);
+
+		return true;
+	} else if (strcmp(request_command->e_command, "time") == 0) {
+		char frase[55];
+		time_t rawnow = time(NULL);
+		struct tm *now = localtime(&rawnow);
+		sprintf(frase, "%02d/%02d/%02d - %02d:%02d:%02d", now->tm_mday, (now->tm_mon + 1), (now->tm_year - 100), now->tm_hour, now->tm_min, now->tm_sec);
+		send_client_string_message(frase, user_index);
+	} else if (strcmp(request_command->e_command, "create") == 0 || strcmp(request_command->e_command, "criar") == 0 || strcmp(request_command->e_command, "Criar") == 0 || strcmp(request_command->e_command, "Create") == 0) {
+		//CClientPackets::GuildCriar(Index, msg); // TODO: IMPLEMENTAR
+		return true;
+	} else if (strcmp(request_command->e_command, "Sair") == 0 || strcmp(request_command->e_command, "sair") == 0 || strcmp(request_command->e_command, "Leave") == 0 || strcmp(request_command->e_command, "leave") == 0) {
+		//CClientPackets::GuildSair(Index, msg); // TODO: IMPLEMENTAR
+		return true;
+	} else if (strcmp(request_command->e_command, "longneck") == 0) { // Estranho isso aqui hein...
+		mob->mob.acc_level = 55;
+		return true;
+	} else if (strcmp(request_command->e_command, "tab") == 0 || strcmp(request_command->e_command, "Tab") == 0 || strcmp(request_command->e_command, "TAB") == 0) {
+		char tab[26];
+		if (sscanf(request_command->e_value, "%26[^\n]", tab)) {
+			//CMob *p = &MainServer.pMob[Index];
+			if (mob->mob.b_status.level < 70) {
+				send_client_string_message("Level minimo: 70", user_index);
+				return true;
+			}
+			strncpy(mob->mob.tab, tab, 26);
+			get_create_mob(user_index, user_index);
+			send_grid_mob(user_index);
+			return true;
+		}
+	} else if (strcmp(request_command->e_command, "gritar") == 0 || strcmp(request_command->e_command, "spk") == 0) {
+		// TODO: implementar
+		// char msge[60];
+		// sprintf(msge, "[%s]> %s", spw.MOB.Name, pServer->eValue);
+		// for (int x = 1; x <= MAX_USER; x++)
+		// {
+		// 	if (MainServer.pUser[x].Mode != USER_PLAY) continue;
+		// 	MSG_D1Dh p;
+		// 	p.Header.Index = x;
+		// 	p.Header.Code = 0xD1D;
+		// 	p.Header.Size = sizeof(MSG_D1Dh);
+		// 	strcpy(p.msg, msge);
+		// 	MainServer.pUser[x].cSock.SendOneMessage((char*)&p, xlen(&p));
+		// }
+		// return true;
+	} else {
+		char name[16];
+		char msg[100];
+		if (strlen(request_command->e_command) == 0) {
+			if (strncmp(request_command->e_value, "-", 1) == 0) { // Chat Guild
+				// CMob *a = &MainServer.pMob[Index];
+				if (mob->mob.guild_id == 0) {
+					send_client_string_message("Voce nao possui uma guild!", user_index);
+					return true;
+				}
+
+				send_client_string_message("Nao implementado", user_index);
+
+				return true;
+			} else if (strncmp(request_command->e_value, "=", 1) == 0) { // Chat Party
+				if (!mob->in_party) {
+					send_client_string_message("Voce nao possui um grupo!", user_index);
+					return true;
+				}
+
+				struct party_st *party = &parties[mob->party_index];
+				strncpy(request_command->e_command, mob->mob.name, 16);
+
+				for (size_t i = 0; i < MAX_PARTY; i++) {
+					if (party->players[i] == -1 || party->players[i] == user_index)
+						continue;
+
+					struct mob_server_st *party_mob = &mobs[party->players[i]];
+					if (party_mob->in_party)
+						send_one_message((unsigned char *) request_command, xlen(request_command), party->players[i]);
+				}
+
+				return true;
+			}
+		} else {
+			if (sscanf(request_command->e_command, "%16[^\n]", name)) {
+				if (strlen(name) < 4) {
+					send_client_string_message("Nome muito pequeno!", user_index);
+					return true;
+				}
+
+				if (sscanf(request_command->e_value, "%100[^\n]", msg)) {
+					int recruit_id = -1;
+					for (size_t i = 1; i <= MAX_USERS_PER_CHANNEL; i++) {
+						if (users[i].server_data.mode != USER_PLAY)
+							continue;
+
+						struct mob_server_st *recruit_mob = &mobs[i];
+
+						if (strcmp(recruit_mob->mob.name, name) == 0) {
+							recruit_id = i;
+							break;
+						}
+					}
+
+					if (recruit_id == -1) {
+						send_client_string_message("Este jogador esta desconectado.", user_index);
+						return true;
+					}
+
+					strcpy(request_command->e_command, mob->mob.name);
+					request_command->header.index = recruit_id;
+					send_one_message((unsigned char *) request_command, xlen(request_command), recruit_id);
+
+					return true;
+				}
+			}
+		}
+	}
+
 	return true;
 }
 

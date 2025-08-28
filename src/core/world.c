@@ -76,8 +76,8 @@ get_empty_mob_grid(int index, short *position_x, short *position_y)
   if (mob_grid[*position_y][*position_x] == index) return true;
 
   if (mob_grid[*position_y][*position_x] == 0)
-  if (height_grid[*position_y][*position_x] != 127)
-    return true;
+    if (height_grid[*position_y][*position_x] != 127)
+      return true;
 
   for (int y = (*position_y - 1); y <= (*position_y + 1); y++)
   {
@@ -206,8 +206,8 @@ get_empty_item_grid(int index, short *position_x, short *position_y)
     return true;
 
   if (item_grid[*position_y][*position_x] == 0) // ??????
-  if (height_grid[*position_y][*position_x] != 127)
-    return true;
+    if (height_grid[*position_y][*position_x] != 127)
+      return true;
 
   for (int y = (*position_y - 1); y <= (*position_y + 1); y++) {
     for (int x = (*position_x - 1); x <= (*position_x + 1); x++) {

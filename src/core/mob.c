@@ -12,12 +12,15 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "../general-config.h"
 #include "../network/server.h"
 #include "../network/packet-def.h"
+#include "../network/socket-utils.h"
 #include "utils.h"
 #include "user.h"
 #include "world.h"
 #include "base_functions.h"
+#include "experience_table.h"
 
 void
 load_base_char_mobs()
@@ -543,9 +546,9 @@ processor_sec_timer_mob(struct mob_server_st *mob, int sec_counter)
 	if (is_dead(*mob))
     return;
 
-	int	Rst4 = (sec_counter & 0x03);
-	int	Rst5 = (sec_counter & 0x04);
-	int	Rst8 = (sec_counter & 0x07);
+	// int	Rst4 = (sec_counter & 0x03);
+	// int	Rst5 = (sec_counter & 0x04);
+	// int	Rst8 = (sec_counter & 0x07);
 	int Rst16 = (sec_counter & 0x0F);
 	bool ret = false;
 
@@ -848,3 +851,315 @@ standby_processor(struct mob_server_st *mob)
 	}
 	return ret_action;
 }
+
+int
+battle_processor(struct mob_server_st *mob)
+{
+	if (is_summon(*mob)) {
+		if (mob->summoner >= MAX_USERS_PER_CHANNEL || mob->summoner <= 0) {
+			remove_object(mob->mob.client_index, mob->mob.current, WORLD_MOB);
+			clear_property(mob);
+			return 0;
+		}
+
+		struct mob_server_st *summoner_mob = &mobs[mob->summoner];
+		bool valid = false;
+		for (size_t i = 0; i < MAX_PARTY; i++) {
+			if (summoner_mob->baby_mob[i] == mob->mob.client_index) {
+				valid = true;
+				break;
+			}
+		}
+
+		if (!valid) {
+			remove_object(mob->mob.client_index, mob->mob.current, WORLD_MOB);
+			clear_property(mob);
+			return 0;
+		}
+
+		double distance = get_distance(mob->mob.current, summoner_mob->mob.current);
+		if (distance > 14) {
+			short newPosX = (summoner_mob->mob.current.X);
+			short newPosY = (summoner_mob->mob.current.Y);
+			movement(mob, newPosX, newPosY, MOVE_TELEPORT);
+			return NO_MORE_ACTION;
+		}
+	}
+
+	if (mob->current_target == 0) {
+		refresh_enemy(mob);
+
+		if (!select_target_from_enemy_list(mob)){
+			mob->mode = MOB_IDLE;
+			mob->current_target = 0;
+			return NO_MORE_ACTION;
+		}
+	} else {
+		double distance = get_distance(mob->mob.current, mobs[mob->current_target].mob.current);
+		if (distance > 2 && distance < 6) {
+			short newPosX = mobs[mob->current_target].mob.current.X;
+			short newPosY = mobs[mob->current_target].mob.current.Y;
+			movement(mob, newPosX, newPosY, MOVE_NORMAL);
+			return NO_MORE_ACTION;
+		}
+
+		double distance_2 = get_distance(mob->mob.current, mobs[mob->current_target].mob.current);
+		if (distance_2 <= 2) {
+			send_attack(mob->mob.client_index, mob->current_target);
+			add_enemy_list(&mobs[mob->current_target], mob->mob.client_index);
+			return NO_MORE_ACTION;
+		}
+	}
+
+	return NO_MORE_ACTION;
+}
+
+void
+level_up(struct mob_server_st *mob)
+{
+	if (mob->mob.b_status.level > 399 && mob->mob.class_master <= CLASS_ARCH) {
+		mob->mob.b_status.level = 399;
+		return;
+	} else if (mob->mob.b_status.level > 199 && mob->mob.class_master >= CLASS_CELESTIAL) {
+		mob->mob.b_status.level = 199;
+		return;
+	}
+
+	if (mob->mob.class_master >= CLASS_CELESTIAL && mob->mob.experience >= experience_celestial_subcelestial[mob->mob.b_status.level + 1]) {
+		// TODO: IMPLEMENTAR
+	}
+	
+	if (mob->mob.experience >= experience_mortal_arch[mob->mob.b_status.level + 1]) {
+		if (mob->mob.b_status.level <= 398) {
+			if (mob->mob.class_master == CLASS_MORTAL) {
+				mob->mob.b_status.level += 1;
+				if (mob->mob.class_info == 3)
+					mob->mob.b_status.attack += 3;
+				else
+					mob->mob.b_status.attack += 1;
+
+				if (mob->mob.class_info == 2)//bm
+					mob->mob.b_status.defense += 3;
+				else if (mob->mob.class_info == 0)//tk
+					mob->mob.b_status.defense += 2;
+				else
+					mob->mob.b_status.defense += 1;
+
+				if (mob->mob.class_info == 1)//foema
+					mob->mob.b_status.max_mp += 3;
+				else
+					mob->mob.b_status.max_mp += 1;
+
+				if (mob->mob.class_info == 0)//tk
+					mob->mob.b_status.max_hp += 3;
+				else
+					mob->mob.b_status.max_hp += 1;
+
+				mob->mob.hold = 0;
+				get_bonus_score_points(&mob->mob);
+				get_bonus_master_points(&mob->mob);
+				get_bonus_skill_points(&mob->mob);
+				mob->mob.status.current_hp = mob->mob.status.max_hp;
+				mob->mob.status.current_mp = mob->mob.status.max_mp;
+				get_current_score(mob->mob.client_index);
+				send_etc(mob->mob.client_index);
+				send_score(mob->mob.client_index);
+				send_affects(mob->mob.client_index);
+				send_client_string_message("+ + + Level UP + + +", mob->mob.client_index);
+				send_emotion(mob->mob.client_index, Effect_LevelUp);
+				send_all_messages(mob->mob.client_index);
+				return;
+			} else if (mob->mob.class_master == CLASS_ARCH) {
+				mob->mob.b_status.level += 1;
+				mob->mob.arch_level = mob->mob.b_status.level;
+				if (mob->mob.class_info == 3)
+					mob->mob.b_status.attack += 4;
+				else
+					mob->mob.b_status.attack += 2;
+
+				if (mob->mob.class_info == 2)//bm
+					mob->mob.b_status.defense += 4;
+				else if (mob->mob.class_info == 0)//tk
+					mob->mob.b_status.defense += 2;
+				else
+					mob->mob.b_status.defense += 1;
+
+				if (mob->mob.class_info == 1 || mob->mob.class_info == 2)//foema
+					mob->mob.b_status.max_mp += 4;
+				else
+					mob->mob.b_status.max_mp += 2;
+
+				if (mob->mob.class_info == 0)//tk
+					mob->mob.b_status.max_hp += 4;
+				else
+					mob->mob.b_status.max_hp += 2;
+
+				mob->mob.hold = 0;
+				get_bonus_score_points(&mob->mob);
+				get_bonus_master_points(&mob->mob);
+				get_bonus_skill_points(&mob->mob);
+				mob->mob.status.current_hp = mob->mob.status.max_hp;
+				mob->mob.status.current_mp = mob->mob.status.max_mp;
+				get_current_score(mob->mob.client_index);
+				send_etc(mob->mob.client_index);
+				send_score(mob->mob.client_index);
+				send_affects(mob->mob.client_index);
+				send_client_string_message("+ + + Level UP + + +", mob->mob.client_index);
+				send_emotion(mob->mob.client_index, Effect_LevelUp);
+
+				send_all_messages(mob->mob.client_index);
+				return;
+			}
+		}
+	}
+}
+
+void 
+mob_drop(struct mob_server_st *user, int mob_index)
+{
+	struct mob_server_st *mob = &mobs[mob_index];
+	if (strcmp(mob->mob.name, "Runas") == 0) {
+		int rune_id = ((rand() % 23) + 5110);
+		int prob_drop = (rand() % 100);
+		
+		if (prob_drop < 25) {
+			struct item_st rune = { 0 };
+			rune.EF1 = 43;
+
+			if (rune_id == 5115)
+				rune_id = ((rand() % 23) + 5110);
+
+			rune.item_id = rune_id;
+
+			int empty_slot = get_item_slot(user->mob.client_index, 0, INV_TYPE);
+			if (empty_slot != -1) {
+				memcpy(&user->mob.inventory[empty_slot], &rune, sizeof(struct item_st));
+				send_create_item(user->mob.client_index, INV_TYPE, empty_slot, &user->mob.inventory[empty_slot]);
+				send_client_string_message(".:: PARABENS ::.", user->mob.client_index);
+			}
+		}
+	} else {
+		int MaxItemDrop = 1 + DROP_RATE;
+		if (MaxItemDrop > 12)
+			MaxItemDrop = 12;
+		
+		int DropGold = (mob->mob.gold * DROP_RATE);
+		if (DropGold > 2000000000)
+			DropGold = 2000000000;
+		
+		int CurrenItemDrop = 0;
+		int ArmorLevel = rand() % 6;
+		int WeaponLevel = rand() % 6;
+
+		if (ArmorLevel <= 4)
+			ArmorLevel = 0;
+		else
+			ArmorLevel = 1;
+
+		if (WeaponLevel <= 4)
+			WeaponLevel = 0;
+		else
+			WeaponLevel = 1;
+
+		int ItemBoss = (rand() % 100);
+		int RateDrop = DROP_RATE + user->drop_bonus;
+
+		if (user->mob.gold + DropGold > 2000000000)
+			user->mob.gold = 2000000000;
+		else
+			user->mob.gold += DropGold;
+
+		send_etc(user->mob.client_index);
+		for (size_t x = 0; x <= 62 && CurrenItemDrop < MaxItemDrop; x++) {
+			int slotIndex = x % 8;
+			int slotType = x / 8;
+			if ((CurrenItemDrop >= MaxItemDrop) && (slotType != 7) && slotIndex != 0)
+				continue;
+			struct item_st DropTemp;
+			memcpy(&DropTemp, &mob->mob.inventory[x], sizeof(struct item_st));
+			if (DropTemp.item_id <= 0) continue;
+			bool SucessDrop = false;
+			int css = rand() % 100;
+			if (css >(50 + (ArmorLevel * 25))) continue;
+			int Chance = 0;
+			if ((slotType == 0 || slotType == 2) && ArmorLevel == 0) //Armor level 0
+				Chance = (14 + RateDrop);
+			else if (slotType == 1 && ItemBoss <= 25) //(boos) (1/4)
+				Chance = (3 + RateDrop);
+			else if (slotType == 3 && WeaponLevel == 0)//WeaponLevel 0 //igual a tmsrv
+				Chance = (13 + RateDrop);
+			else if ((slotType == 4 || slotType == 5) && ArmorLevel == 1)//Armor Level 1
+				Chance = (8 + RateDrop);
+			else if (slotType == 6 && WeaponLevel == 1)//WeaponLevel 1
+				Chance = (8 + RateDrop);
+			else if (slotType == 7) { // Special Slots
+				if (slotIndex == 0) //slot 56 == 100% Confirmado TMSRV
+					Chance = 100;
+				else if (slotIndex == 1 || slotIndex == 2) //slot 57 e 58 == 50%
+					Chance = (20 + RateDrop);
+				else if (slotIndex == 3) // slot 59 == 3%
+					Chance = (2 + RateDrop);
+				else if (slotIndex == 4) // slot 60 == 10%
+					Chance = (5 + RateDrop);
+				else if (slotIndex == 5 || slotIndex == 6) //slot 61 e 62 == 5%
+					Chance = (3 + RateDrop);
+			} else {
+				Chance = 0;
+			}
+
+			if (Chance == 0) SucessDrop = false;
+			else {
+				int Sucess = 0;
+				int tx = 50;
+				tx += 150;
+				Sucess = (rand() % tx);
+				if (Sucess <= Chance) SucessDrop = true;
+				else SucessDrop = false;
+			}
+
+			if (SucessDrop) {
+				int empty_slot = get_item_slot(user->mob.client_index, 0, INV_TYPE);
+				if (empty_slot == -1) {
+					send_client_string_message("Inventario cheio!", user->mob.client_index);
+					break;
+				}
+
+				memcpy(&user->mob.inventory[empty_slot], &DropTemp, sizeof(struct item_st));
+				send_create_item(user->mob.client_index, INV_TYPE, empty_slot, &user->mob.inventory[empty_slot]);
+				CurrenItemDrop++;
+			}
+		}
+		int Rate_Bonus = abs(rand() % 120);
+		if (Rate_Bonus <= 3)
+		{
+			struct item_st DropTemp;
+			memset(&DropTemp, 0, sizeof(struct item_st));
+			DropTemp.item_id = 4026;
+			int EmptySlot = get_item_slot(user->mob.client_index, 0, INV_TYPE);
+			if (EmptySlot == -1) {
+				send_client_string_message("Inventario cheio!", user->mob.client_index);
+				return;
+			}
+			memcpy(&user->mob.inventory[EmptySlot], &DropTemp, sizeof(struct item_st));
+			send_create_item(user->mob.client_index, INV_TYPE, EmptySlot, &user->mob.inventory[EmptySlot]);
+		}
+		int Rate_Bonus2 = abs(rand() % 120);
+		if (Rate_Bonus2 <= 2)
+		{
+			struct item_st DropTemp;
+			memset(&DropTemp, 0, sizeof(struct item_st));
+			DropTemp.item_id = 4027;
+			int EmptySlot = get_item_slot(user->mob.client_index, 0, INV_TYPE);
+			
+			if (EmptySlot == -1) {
+				send_client_string_message("Inventario cheio!", user->mob.client_index);
+				return;
+			
+			}
+			memcpy(&user->mob.inventory[EmptySlot], &DropTemp, sizeof(struct item_st));
+			send_create_item(user->mob.client_index, INV_TYPE, EmptySlot, &user->mob.inventory[EmptySlot]);
+		}
+	}
+	return;
+}
+

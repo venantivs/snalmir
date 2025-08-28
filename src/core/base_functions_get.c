@@ -44,7 +44,7 @@ get_create_item(int item_index)
 {
 	struct packet_create_ground_item create_ground_item;
 	struct ground_item_st *init = &ground_items[item_index];
-	create_ground_item.header.index = 0x7530; // ??????
+	create_ground_item.header.index = 0x7530;
 	create_ground_item.header.operation_code = 0x26E;
 	create_ground_item.header.size = sizeof(struct packet_create_ground_item);
 	create_ground_item.position.X = init->position.X;
@@ -196,7 +196,7 @@ get_action(int mob_index, short posX, short posY, int type, char *command)
 	struct packet_request_action request_action;
 	request_action.header.size = sizeof(struct packet_request_action);
 	request_action.header.operation_code = 0x366;
-	request_action.header.index= mob_index;
+	request_action.header.index = mob_index;
 	request_action.source_position = mob->current;
 	request_action.speed = mob->status.speed;
 	request_action.destiny_position.X = posX;
@@ -230,24 +230,99 @@ get_affect(int offset, struct affect_st *skills, unsigned char *buffer)
 	}
 }
 
+int
+get_pk_points(int mob_index) {
+	return mobs[mob_index].mob.inventory[63].effect[0].index;
+}
+
+int
+get_current_kills(int mob_index) {
+	return mobs[mob_index].mob.inventory[63].effect[0].value;
+}
+
+int
+get_total_kills(int mob_index) {
+	unsigned char f_tFrag = mobs[mob_index].mob.inventory[63].effect[1].value;
+	unsigned char s_tFrag = mobs[mob_index].mob.inventory[63].effect[2].value;
+
+	return f_tFrag + (s_tFrag << 8);
+}
+
+int
+get_cape_id(int item_id) {
+	switch (item_id) {
+	case 543:
+	case 545:
+	case 549:
+	case 734:
+	case 736:
+	case 1766:
+	case 1767:
+	case 1768:
+	case 3191:
+	case 3194:
+	case 3197:
+	case 3199:
+		return 1; // Blue
+	case 544:
+	case 546:
+	case 735:
+	case 737:
+	case 1720:
+	case 1769:
+	case 1770:
+	case 1771:
+	case 3192:
+	case 3195:
+	case 3198:
+	case 4015:
+		return 2; // Red
+	default:
+		return 3; // Outras
+	}
+}
+
 void
-get_create_mob(int user_index, int mob_index)
+set_total_kills(int mob_index, int frag)
 {
-	struct mob_st *npc_mob = &mobs[mob_index].mob;
+	if (frag < 0)
+		frag = 0;
+	else if (frag > 9999)
+		frag = 9999;
+
+	mobs[mob_index].mob.inventory[63].effect[1].value = frag & 255;
+	mobs[mob_index].mob.inventory[63].effect[2].value = frag >> 8;
+}
+
+int
+get_guilty(int mob_index)
+{
+	unsigned char *guilty = &mobs[mob_index].mob.inventory[63].effect[1].index;
+	if (*guilty > 50)
+		*guilty = 0;
+
+	return *guilty;
+}
+
+void
+get_create_mob(int create_index, int send_index)
+{
+	struct mob_st *npc_mob = &mobs[create_index].mob;
 
 	struct packet_spawn_info spawn_info;
 	memset(&spawn_info, 0xCC, sizeof(struct packet_spawn_info));
 	spawn_info.header.size = sizeof(struct packet_spawn_info);
 	spawn_info.header.operation_code = 0x364;
 	spawn_info.header.index = 0x7530;
-	spawn_info.client_id = user_index;
+	spawn_info.client_id = create_index;
 	spawn_info.position.X = npc_mob->last_position.X;
 	spawn_info.position.Y = npc_mob->last_position.Y;
 	spawn_info.spawn.member_type = npc_mob->guild_member_type * 0x40;
 
-	if (mobs[mob_index].guild_disable == 0 && mob_index <= MAX_USERS_PER_CHANNEL) {
-		// TODO: SET GUILD INDEX
-	} else if (mob_index <= MAX_USERS_PER_CHANNEL) {
+	if (mobs[create_index].guild_disable == 0 && create_index <= MAX_USERS_PER_CHANNEL) {
+		spawn_info.guild_index = npc_mob->guild_id;
+		spawn_info.spawn.member_type = npc_mob->guild_member_type * 0x40;
+	} else if (create_index <= MAX_USERS_PER_CHANNEL) {
 		spawn_info.guild_index = 0;
 		spawn_info.spawn.member_type = 0;
 	}
@@ -255,15 +330,16 @@ get_create_mob(int user_index, int mob_index)
 	strncpy(spawn_info.name, npc_mob->name, 16);
 	memcpy(&spawn_info.status, &npc_mob->status, sizeof(struct status_st));
 
-	if (mob_index < MAX_USERS_PER_CHANNEL) {
-		spawn_info.chaos_points = 0; // TODO: Implement get_pk_points
-		spawn_info.current_kill = 0; // TODO: Implement get_current_kils
-		spawn_info.total_kill = 0; // TODO: Implement get_total_kills
+	if (create_index < MAX_USERS_PER_CHANNEL) {
+		spawn_info.chaos_points = get_pk_points(create_index);
+		spawn_info.current_kill = get_current_kills(create_index);
+		spawn_info.total_kill = get_total_kills(create_index);
 
-		// TODO: Implent get_guilty
+		if (get_guilty(create_index) > 0)
+			spawn_info.chaos_points = 0;
 	}
 
-	spawn_info.spawn.type = mobs[mob_index].spawn_type;
+	spawn_info.spawn.type = mobs[create_index].spawn_type;
 
 	for (size_t i = 0; i < 16; i++) {
 		struct item_st *equipped_item = &npc_mob->equip[i];
@@ -278,21 +354,21 @@ get_create_mob(int user_index, int mob_index)
 		spawn_info.anct_code[i] = get_anct_code(equipped_item);
 	}
 
-	// TODO: Vê isso aqui com calma ???
+	// TODO: Vê isso aqui com calma???
 	int offset = (int) ((int) spawn_info.affect) - ((int) &spawn_info);
 
-	get_affect(offset, npc_mob->affect, (unsigned char *)&spawn_info);
+	get_affect(offset, npc_mob->affect, (unsigned char *) &spawn_info);
 
-	if (mob_index <= MAX_USERS_PER_CHANNEL)
+	if (create_index <= MAX_USERS_PER_CHANNEL)
 		strncpy(spawn_info.tab, npc_mob->tab, 26);
 	else
 		memset(spawn_info.tab, 0, 26);
 
-	if (mob_index >= BASE_MOB) {
+	if (create_index >= BASE_MOB) {
 		spawn_info.status.current_hp = npc_mob->status.current_hp;
 		spawn_info.status.current_mp = npc_mob->status.current_mp;
 	} else {
-		if (is_dead(mobs[mob_index])) {
+		if (is_dead(mobs[create_index])) {
 			spawn_info.status.current_hp = 0;
 			spawn_info.status.current_mp = 0;
 		} else {
@@ -301,7 +377,7 @@ get_create_mob(int user_index, int mob_index)
 		}
 	}
 
-	send_one_message((unsigned char*) &spawn_info, xlen(&spawn_info), user_index);
+	send_one_message((unsigned char*) &spawn_info, xlen(&spawn_info), send_index);
 }
 
 void
@@ -1614,4 +1690,166 @@ get_door_type(struct position_st position)
 		return DOOR_NOATUN;
 	else
 		return 0;
+}
+
+void
+set_pk_points(int mob_index, int pk_points)
+{
+	if (pk_points < 1)
+		pk_points = 1;
+	else if (pk_points > 150)
+		pk_points = 150;
+
+	mobs[mob_index].mob.inventory[63].effect[0].index = pk_points;
+}
+
+unsigned int
+get_exp_by_kill(unsigned int exp, int attacker_index, int target_index)
+{
+	struct mob_st *attacker = &mobs[attacker_index].mob;
+	struct mob_st *target = &mobs[target_index].mob;
+
+	if ((attacker->class_master == CLASS_CELESTIAL || attacker->class_master == CLASS_SUB_CELESTIAL && attacker->equip[CAPE_SLOT].item_id >= 3197 && attacker->equip[CAPE_SLOT].item_id <= 3199)
+		|| (target->class_master == CLASS_CELESTIAL || target->class_master == CLASS_SUB_CELESTIAL && target->equip[CAPE_SLOT].item_id >= 3197 && target->equip[CAPE_SLOT].item_id <= 3199)) { //Celestial e Sub
+		if (attacker->status.level >= MAX_LEVELCSH - 1 || target->status.level >= MAX_LEVELCSH - 1 || attacker->status.level < 0 || target->status.level < 0) {
+			if (attacker->experience >= 4050000000) {
+				attacker->experience = 4050000000;
+				exp = 0;
+			}
+
+			return exp;
+		}
+
+		//Block Level
+		if (attacker->status.level >= 39 && attacker->quest_info <= 0) {
+			attacker->quest_info = 0;
+			attacker->status.level = 39;
+			attacker->experience = 780000000;
+			exp = 0;
+			send_client_string_message("Desbloqueie o level 40 para continuar upando.", attacker_index);
+			return exp;
+		} else if (attacker->status.level >= 89 && attacker->quest_info <= 1) {
+			attacker->quest_info = 1;
+			attacker->status.level = 89;
+			attacker->experience = 1780000000;
+			exp = 0;
+			send_client_string_message("Desbloqueie o level 90 para continuar upando.", attacker_index);
+			return exp;
+		}
+	} else { //Mortal e Arch
+		if (attacker->status.level >= MAX_LEVEL - 1 || target->status.level >= MAX_LEVEL - 1 || attacker->status.level < 0 || target->status.level < 0) {
+			if (attacker->experience >= 4050000000) { //Bloqueia a xp lvl 400 2/4
+				attacker->experience = 4050000000;
+				exp = 0;
+			}
+
+			return exp;
+		}
+
+		if (attacker->class_master == CLASS_ARCH) {
+			if (attacker->status.level >= 354 && attacker->quest_info <= 0) {
+				attacker->quest_info = 0;
+				attacker->status.level = 354;
+				attacker->experience = 2039000000;
+				exp = 0;
+				send_client_string_message("Desbloquei o level 355 para continuar upando.", attacker_index);
+				return exp;
+			}
+		}
+	}
+
+	int attackerLevel = attacker->status.level;
+	int targetLevel = target->status.level;
+	attackerLevel++;
+	targetLevel++;
+
+	int multiexp = (targetLevel * 100) / attackerLevel;
+	if (multiexp < 80 && attackerLevel >= 50)
+		multiexp = (multiexp * 2) - 100;
+	else if (multiexp > 200)
+		multiexp = 200;
+
+	if (multiexp < 0)
+		multiexp = 0;
+
+	exp = exp * multiexp / 100;
+
+	for (size_t i = 0; i < MAX_AFFECT; i++) {
+		if (attacker->affect[i].index == BAU_EXP) { // Bau de XP
+			exp = exp * 2;
+			break;
+		}
+	}
+
+	//Fadas de XP
+	switch (attacker->equip[PET_SLOT].item_id) {
+	case 3900: //
+	case 3903: //
+	case 3906: // Fadas Verdes
+	case 3911: //
+	case 3912: //
+	case 3913: //
+
+	case 3902: //
+	case 3905: // Fadas Vermelhas
+	case 3908: //
+
+	case 3914: // Fada Prateada
+		exp = (exp * 116) / 100;
+		break;
+	case 3915: // Fada Dourada
+		exp = (exp * 118) / 100;
+		break;
+	}
+
+	if (attacker->class_master == CLASS_SUB_CELESTIAL)
+		exp /= 3;
+	else if (attacker->class_master == CLASS_CELESTIAL)
+		exp /= 2;
+
+	return exp;
+}
+
+int
+get_item_slot(int user_index, int item_id, int type)
+{
+	struct mob_st *mob = &mobs[user_index].mob;
+
+	if (type == INV_TYPE) {
+		bool bkp1 = false;
+		bool bkp2 = false;
+
+		if (mob->inventory[60].item_id == 3467)
+			bkp1 = true;
+
+		if (mob->inventory[61].item_id == 3467)
+			bkp2 = true;
+
+		for (size_t x = 0; x < 60; x++) {
+			if ((x >= 30 && x <= 44) && !bkp1)
+				continue;
+
+			if ((x >= 45 && x <= 59) && !bkp2)
+				continue;
+
+			if (mob->inventory[x].item_id == item_id)
+				return x;
+		}
+	}
+
+	if (type == EQUIP_TYPE) {
+		for (size_t x = 0; x < 16; x++) {
+			if (mob->equip[x].item_id == item_id)
+				return x;
+		}
+	}
+
+	if (type == STORAGE_TYPE) {
+		for (size_t x = 0; x < 128; x++) {
+			if (users[user_index].storage[x].item_id == item_id)
+				return x;
+		}
+	}
+
+	return -1;
 }

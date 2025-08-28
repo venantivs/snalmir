@@ -421,7 +421,7 @@ enter_world(struct packet_request_enter_world *request_enter_world, int user_ind
 		memcpy(&mob.skill_bar_1, sub_cele->skill_bar_1, 4);
 		memcpy(&mob.skill_bar_2, sub_cele->skill_bar_2, 16);
 
-		printf("NÃO DEVERIA TER ENTRADO AQUI. TERMINAR DE IMPLEMENTAR\n");
+		fprintf(stderr, "NÃO DEVERIA TER ENTRADO AQUI. TERMINAR DE IMPLEMENTAR\n");
 		return true;
 	}
 

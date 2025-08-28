@@ -67,13 +67,18 @@ segregate_packet(unsigned char *packet, int user_index)
 		return delete_char((struct packet_request_delete_char *) header, user_index);
 	case 0x213:
 		return enter_world((struct packet_request_enter_world *) header, user_index);
-	case 0x3ae:
+	case 0x334:
+		return request_command((struct packet_request_command *) header, user_index);
+	case 0x3AE:
 		return request_logout_char(user_index);
 	case 0x215:
 		return request_return_char_list(user_index);
 	case 0x366:
 	case 0x367:
 		return request_movement((struct packet_request_action *) header, user_index);
+	case 0x369:
+	case 0x2CB:
+		return true;
 	default:
 		printf("PACKET NÃO IMPLEMENTADO: %x\n", header->operation_code);
 	}

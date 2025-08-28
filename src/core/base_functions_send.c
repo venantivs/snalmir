@@ -12,8 +12,11 @@
 #include "base_functions.h"
 #include "world.h"
 #include "../network/socket-utils.h"
+#include "item_effect.h"
+#include "experience_table.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 void
@@ -116,15 +119,13 @@ send_grid_item(int index, void *packet)
 }
 
 void
-send_create_mob(int user_index, int mob_index)
+send_create_mob(int send_index, int create_index)
 {
-  if (user_index <= MAX_USERS_PER_CHANNEL) {
-    if (mobs[mob_index].mode == MOB_MARKET) {
-      // CREATES A MARKET MOB, TODO: Implement
-    } else {
-      get_create_mob(user_index, mob_index);
-    }
-  }
+  if (create_index <= MAX_USERS_PER_CHANNEL && mobs[create_index].mode == MOB_MARKET) {
+    // CREATES A MARKET MOB, TODO: Implement 
+  } else {
+		get_create_mob(create_index, send_index);
+	}
 }
 
 void 
@@ -393,8 +394,10 @@ send_grid_multicast_with_packet(int mob_index, short position_x, short position_
 				if (mob_id > 0 && mob_index != mob_id) {
 					if (mob_id <= MAX_USERS_PER_CHANNEL)
 						send_create_mob(mob_id, mob_index);
+
 					if (mob_index <= MAX_USERS_PER_CHANNEL)
 						send_create_mob(mob_index, mob_id);
+
 					if (packet != NULL && mob_id <= MAX_USERS_PER_CHANNEL)
 						send_one_message((unsigned char*) packet, xlen(packet), mob_id);
 				}
@@ -459,4 +462,433 @@ send_teleport(int mob_index, struct position_st destination)
 	mob->last_position.Y = mob->current.Y;
 
 	get_action(mob_index, destination.X, destination.Y, MOVE_TELEPORT, NULL);
+}
+
+short
+get_damage(short damage, short defense, unsigned char master)
+{
+	short result_damage = damage - (defense >> 1);
+	if ((master >> 1) > 7)
+		master = 7;
+
+	int master_factory = 12 - master;
+	if (master_factory <= 0)
+		master_factory = 2;
+
+	int rand_factory = (rand() % master_factory) + master + 99;
+
+	result_damage = (result_damage * rand_factory) / 100;
+	if (result_damage < -50)
+		result_damage = 0;
+	else if (result_damage >= -50 && result_damage < 0)
+		result_damage = (result_damage + 50) / 7;
+	else if (result_damage >= 0 && result_damage <= 50)
+		result_damage = ((result_damage * 5) >> 2) + 7;
+
+	if (result_damage <= 0)
+		result_damage = 1;
+
+	return result_damage;
+}
+
+void
+send_party_experience(short mob_index, short killed_index)
+{
+	struct mob_server_st *mob = &mobs[mob_index];
+	struct party_st *party = &parties[mob->party_index];
+
+	for (size_t x = 0; x < MAX_PARTY; x++) {
+		int k = party->players[x];
+		
+		if (k == -1)
+			continue;
+		
+		if (k == mob_index)
+			continue;
+		
+		struct mob_server_st *tar = &mobs[k];
+		int distance = get_distance(mob->mob.current, tar->mob.current);
+		if (distance < 8) {
+			int class_experience = ((get_exp_by_kill(mobs[killed_index].mob.experience, k, killed_index) * 70) / 100);
+			tar->mob.experience += class_experience;
+
+			struct packet_dead_mob dead_mob;
+			dead_mob.header.size = 24;
+			dead_mob.header.operation_code = 0x338;
+			dead_mob.header.index = 0x7530;
+			dead_mob.hold = tar->mob.hold;
+			dead_mob.killer_index = k;
+			dead_mob.killed_index = killed_index;
+			dead_mob.experience = tar->mob.experience;
+
+			add_client_message((unsigned char*) &dead_mob, xlen(&dead_mob), k);
+			level_up(tar);
+			get_current_score(k);
+			send_score(k);
+			send_etc(k);
+			send_affects(k);
+
+			send_all_messages(k);
+		}
+	}
+}
+
+bool
+process_chaos_points(int killer_index, int killed_index)
+{
+	struct mob_st *killer = &mobs[killer_index].mob;
+	struct mob_st *killed = &mobs[killer_index].mob;
+
+	if (killer_index <= 0 || killer_index >= MAX_USERS_PER_CHANNEL)
+		return false;
+	else if (killed_index <= 0 || killed_index >= MAX_USERS_PER_CHANNEL)
+		return false;
+
+	short new_frag = get_total_kills(killer_index) + 1;
+	int cape_killer = get_cape_id(killer->equip[CAPE_SLOT].item_id);
+	int cape_killed = get_cape_id(killed->equip[CAPE_SLOT].item_id);
+	
+	if (cape_killer == 3 || cape_killed == 3)
+		return false;
+	
+	if (cape_killer == cape_killed)
+		return false;
+
+	set_total_kills(killer_index, new_frag);
+	killed->hold += ((experience_mortal_arch[killed->b_status.level] * 20) / 100);
+	send_etc(killed_index);
+
+	return true;
+}
+
+void
+send_env_effect(struct position_st min, struct position_st max, short effect_id, short time)
+{
+	struct packet_send_effect send_effect;
+	send_effect.header.index = 0x7530;
+	send_effect.header.operation_code = 0x3A2;
+	send_effect.header.size = sizeof(struct packet_send_effect);
+	send_effect.min = min;
+	send_effect.max = max;
+	send_effect.effect_id = effect_id;
+	send_effect.time = 0;
+
+	for (size_t i = 1; i <= MAX_USERS_PER_CHANNEL; i++) {
+		if (users[i].server_data.mode != USER_PLAY)
+			continue;
+
+		if ((mobs[i].mob.current.X >= min.X && mobs[i].mob.current.X <= max.X) && (mobs[i].mob.current.Y >= min.Y && mobs[i].mob.current.Y <= max.Y)) {
+			send_one_message((unsigned char*) &send_effect, xlen(&send_effect), i);
+		}
+	}
+}
+
+void
+send_mob_dead(int killer_index, int killed_index)
+{
+	if (killed_index <= MAX_USERS_PER_CHANNEL && killer_index <= MAX_USERS_PER_CHANNEL) {
+		if (check_pvp_area(killer_index) >= 2 && !mobs[killer_index].in_duel) {
+			int minusCP = 1;
+			bool frag = process_chaos_points(killer_index, killed_index);
+			
+			if (frag)
+				minusCP = 4;
+			
+			short cpoint = (killer_index) - minusCP;
+			if (check_pvp_area(killer_index) == 2) {
+				if (frag) {
+					set_pk_points(killer_index, cpoint);
+					send_client_string_message("Foi reduzido o CP em -1 e frag aumentado em +1.", killer_index);
+				} else {
+					set_pk_points(killer_index, cpoint);
+					send_client_string_message("Seu CP foi reduzido em -4.", killer_index);
+				}
+
+				get_create_mob(killer_index, killer_index);
+				send_grid_mob(killer_index);
+			}
+		} else if (mobs[killer_index].in_duel && mobs[killed_index].in_duel) {
+			/*SendClientMessage(Killer, "Parabens, voce venceu o Duelo!!!");
+			SendClientMessage(Killed, "Que pena, voce perdeu o Duelo!!!");
+			DoTeleport(Killer, 2100, 2100);
+			DoTeleport(Killed, 2100, 2100);
+			MainServer.pMob[Killer].InDuelo = false;
+			MainServer.pMob[Killed].InDuelo = false;
+			Event.Duelo.DuelStart = false;
+			Event.Duelo.Time = -1;*/
+		}
+
+		mobs[killer_index].mob.last_position = mobs[killer_index].mob.current;
+		get_action(killer_index, mobs[killer_index].mob.current.X, mobs[killer_index].mob.current.Y, MOVE_NORMAL, NULL);
+
+		return;
+	}
+
+	if (killed_index <= MAX_USERS_PER_CHANNEL)
+		return;
+
+	struct mob_server_st *killer = &mobs[killer_index];
+	struct mob_server_st *killed = &mobs[killed_index];
+	struct npcgener_st *n = &gener_list[killed->generate_index];
+
+	if (killed->mob_type == MOB_TYPE_PESA_MOB || killed->mob_type == MOB_TYPE_PESA_BOSS) { //pesa mob dead
+		fprintf(stderr, "MOB PESA MORREU, DEU RUIM\n");
+		// n->MinuteGenerate = 1;
+		// n->
+		// MainServer.ModuleManager.PesaMod.MobDead(Killer, Killed);
+		// TODO: IMPLEMENTAR
+	} else {
+		if (killer->in_party)
+			send_party_experience(killer_index, killed_index);
+	}
+
+	struct packet_dead_mob dead_mob;
+	dead_mob.header.size = sizeof(struct packet_dead_mob);
+	dead_mob.header.operation_code = 0x338;
+	dead_mob.header.index = 0x7530;
+	dead_mob.hold = killer->mob.hold;
+	dead_mob.killer_index = killer_index;
+	dead_mob.killed_index = killed_index;
+	dead_mob.experience = killer->mob.experience;
+	send_one_message((unsigned char *) &dead_mob, xlen(&dead_mob), killer_index);
+
+	time_t now = time(NULL);
+	n->death_time[killed->death_id] = now;
+	n->current_num_mob--;
+
+	if (killed->mob_type == MOB_TYPE_AGUA) {
+		fprintf(stderr, "MOB AGUA MORREU, DEU RUIM\n");
+		// TODO: AGUA, IMPLEMENTAR
+		// MainServer.ModuleManager.AguaMod.MobDead(Killed, Killer);
+	}
+
+	send_remove_mob(killed_index, killed_index, DELETE_DEAD);
+	remove_object(killed_index, killed->mob.current, WORLD_MOB);
+	mob_drop(killer, killed_index);
+	clear_property(killed);
+	return;
+}
+
+void
+send_attack(int attacker_index, int target_index)
+{
+	struct mob_server_st *attacker = &mobs[attacker_index];
+	struct mob_server_st *target = &mobs[target_index];
+	// CMob *Atk = &MainServer.pMob[Atacker];
+	// CMob *Def = &MainServer.pMob[Defender];
+	if (is_dead(*target))
+		return;
+
+	struct packet_attack_single attack_single = { 0 };
+	attack_single.header.operation_code = 0x39D;
+	attack_single.header.size = sizeof(struct packet_attack_single);
+	attack_single.header.index = attacker_index;
+	attack_single.attack_count = 1;
+	attack_single.attacker_id = attacker_index;
+	attack_single.attacker_pos = attacker->mob.current;
+
+	if (attacker->mob.equip[6].item_id != 0) {
+		int ef_range = get_item_ability(&attacker->mob.equip[6], EF_RANGE);
+		if (ef_range == 2)
+			attack_single.skill_index = 153;
+		else if (ef_range > 2)
+			attack_single.skill_index = 151;
+	} else {
+		attack_single.skill_index = -1;
+	}
+
+	attack_single.target.target_id = target_index;
+	attack_single.target_pos = target->mob.current;
+	attack_single.double_critical = p39x_NORMAL;
+
+	int damage = get_damage(attacker->mob.status.attack, target->mob.status.defense, 1);
+	if (damage <= 0)
+		damage = -3;
+
+	attack_single.target.damage = damage;
+
+	if (damage == -3)
+		damage = 0;
+
+	if (target_index <= MAX_USERS_PER_CHANNEL) {
+		for (size_t i = 0; i < MAX_PARTY; i++) {
+			int index = target->baby_mob[i];
+			
+			if (index <= 0)
+				continue;
+			
+			if (index <= MAX_USERS_PER_CHANNEL || index >= MAX_SPAWN_LIST) {
+				target->baby_mob[i] = 0;
+				continue;
+			}
+
+			struct mob_server_st *mob = &mobs[index];
+			if (!is_summon(*mob)) {
+				target->baby_mob[i] = 0;
+				continue;
+			}
+			
+			add_enemy_list(mob, attacker_index);
+		}
+	}
+
+	bool CM = false;
+	for (size_t x = 0; x < MAX_AFFECT; x++) {
+		if (target->mob.affect[x].index == FM_CONTROLE_MANA) {
+			CM = true;
+			break;
+		}
+	}
+
+	attack_single.current_mp = target->mob.status.current_mp;
+	attack_single.current_exp = target->mob.experience;
+	attack_single.motion = 5;
+
+CM_CONT:
+	if (CM) {
+		int hp = (target->mob.status.current_mp - damage);
+		short posX = target->mob.current.X;
+		short posY = target->mob.current.Y;
+		if (hp <= 0) {
+			CM = false;
+			for (size_t x = 0; x < MAX_AFFECT; x++) {
+				if (target->mob.affect[x].index == FM_CONTROLE_MANA) {
+					target->mob.affect[x].index = 0;
+					target->mob.affect[x].time = 0;
+					target->mob.affect[x].master = 0;
+					target->mob.affect[x].value = 0;
+					target->buffer_time[x] = 0;
+				}
+			}
+			damage -= target->mob.status.current_mp;
+			target->mob.status.current_mp = 0;
+			goto CM_CONT;
+		} else {
+			target->mob.status.current_mp = target->mob.status.current_mp - damage;
+			
+			send_grid_multicast(posX, posY, &attack_single, 0);
+			get_current_score(target_index);
+			send_score(target_index);
+			
+			if (target_index < MAX_USERS_PER_CHANNEL) {
+				send_etc(target_index);
+				send_affects(target_index);
+				send_all_messages(target_index);
+			}
+		}
+	} else {
+		int hp = (target->mob.status.current_hp - damage);
+		short posX = target->mob.current.X;
+		short posY = target->mob.current.Y;
+		
+		send_grid_multicast(posX, posY, &attack_single, 0);
+		
+		if (hp <= 0) {
+			if (target_index <= MAX_USERS_PER_CHANNEL) {
+				attacker->current_target = 0;
+				target->mob.status.current_hp = 0;
+				remove_enemy_list(attacker, target_index);
+				get_create_mob(target_index, target_index);
+				send_grid_mob(target_index);
+				return;
+			} else {
+				if (is_summon(*target)) {
+					if (target->summoner > 0 && target->summoner <= MAX_USERS_PER_CHANNEL) {
+						struct mob_server_st *summoner = &mobs[target->summoner];
+						for (int x = 0; x < MAX_PARTY; x++) {
+							if (summoner->baby_mob[x] == target_index) {
+								summoner->baby_mob[x] = 0;
+								break;
+							}
+						}
+					}
+					remove_object(target_index, target->mob.current, WORLD_MOB);
+					clear_property(target);
+					target->mode = MOB_EMPTY;
+				} else if (target->mob_type == MOB_TYPE_PESA_NPC) {
+					printf("MOB PESA, NÃO IMPLEMENTADO.\n");
+					// int PesaID = -1;
+					// if (Def->GenerateIndex >= 270 && Def->GenerateIndex <= 274) PesaID = PesaA;
+					// else if (Def->GenerateIndex >= 285 && Def->GenerateIndex <= 291) PesaID = PesaM;
+					// else if (Def->GenerateIndex >= 303 && Def->GenerateIndex <= 309) PesaID = PesaA;
+					// STRUCT_PESADELO *p = &MainServer.ModuleManager.PesaMod.Pesadelo;
+					// STRUCT_NPCGENER *n = &MainServer.NPCGener.GenerList[Def->GenerateIndex];
+					// n->CurrentNumMob--;
+					// p->NpcsVivos[PesaID]--;
+					// MainServer.World.RemoveObject(Defender, Def->MOB.Current.X, Def->MOB.Current.Y, WORLD_MOB);
+					// SendRemoveMob(Defender, Defender, DELETE_UNSPAWN);
+					// Def->ClearProperty();
+					// SEND::SendNoticeArea("Npc Morreu!", p->AreaMin[PesaID].X, p->AreaMin[PesaID].Y, p->AreaMax[PesaID].X, p->AreaMax[PesaID].Y);
+					// for (int y = 1; y <= MAX_USER; y++) {
+					// 	if (MainServer.pUser[y].Mode != USER_PLAY) continue;
+					// 	CMob *a = &MainServer.pMob[y];
+					// 	if (a->IsDead()) continue;
+					// 	if ((a->MOB.Current.X >= p->AreaMin[PesaID].X && a->MOB.Current.X <= p->AreaMax[PesaID].X) && (a->MOB.Current.Y >= p->AreaMin[PesaID].Y && a->MOB.Current.Y <= p->AreaMax[PesaID].Y)) {
+					// 		MSG_3BBh packet;
+					// 		memset(&packet, 0, sizeof(MSG_3BBh));
+					// 		packet.header.Size = sizeof(MSG_3BBh);
+					// 		packet.header.Code = 0x3BB;
+					// 		packet.header.Index = 0x7530;
+					// 		packet.cur_mob = p->NpcsVivos[PesaID];
+					// 		if (PesaID == PesaN)
+					// 			packet.max_mob = 5;
+					// 		else
+					// 			packet.max_mob = 7;
+					// 		SEND_CLIENT(y, &packet);
+					// 	}
+					// }
+				} else if (is_summon(*attacker) && !is_summon(*target)) {
+					target->mob.status.current_hp = 0;
+					if (attacker->summoner < 0 || attacker->summoner > MAX_USERS_PER_CHANNEL)
+						return;
+
+					if (users[attacker->summoner].server_data.mode != USER_PLAY)
+						return;
+
+					mobs[attacker->summoner].mob.experience += get_exp_by_kill(target->mob.experience, attacker->summoner, target_index);
+					send_mob_dead(attacker->summoner, target_index);
+					send_affects(attacker->summoner);
+					level_up(&mobs[attacker->summoner]);
+					send_all_messages(attacker->summoner);
+				}
+			}
+		} else {
+			target->mob.status.current_hp = (target->mob.status.current_hp - damage);
+			get_current_score(target_index);
+			send_score(target_index);
+			if (target_index < MAX_USERS_PER_CHANNEL) {
+				send_etc(target_index);
+				send_affects(target_index);
+				send_all_messages(target_index);
+			}
+		}
+	}
+	
+	get_current_score(attacker_index);
+	send_score(attacker_index);
+
+	if (attacker_index <= MAX_USERS_PER_CHANNEL) {
+		send_etc(attacker_index);
+		send_affects(attacker_index);
+		send_all_messages(attacker_index);
+	}
+}
+
+void
+send_create_item(int user_index, short inventory_type, short inventory_slot, struct item_st *item)
+{
+	struct packet_create_item create_item;
+	create_item.header.size = sizeof(struct packet_create_item);
+	create_item.header.operation_code = 0x182;
+	create_item.header.index = user_index;
+
+	create_item.inventory_type = inventory_type;
+	create_item.inventory_slot= inventory_slot;
+
+	if (item == NULL)
+		memset(&create_item.item, 0, sizeof(struct item_st));
+	else
+		create_item.item = *item;
+
+	send_one_message((unsigned char *) &create_item, xlen(&create_item), user_index);
 }
