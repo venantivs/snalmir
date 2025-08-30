@@ -8,6 +8,7 @@
 size_t get_spawn_empty_index();
 void get_create_mob(int mob_index, int client_index);
 void get_guild_zone(struct mob_server_st mob, short *position_x, short *position_y);
+void set_guild_zone(short index, int zone_index);
 void get_current_score(int user_index);
 int get_bonus_score_points(struct mob_st *user);
 void get_bonus_master_points(struct mob_st *user);

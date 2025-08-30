@@ -393,6 +393,20 @@ get_guild_zone(struct mob_server_st mob, short *position_x, short *position_y)
 	*position_y = zone.city_y + (rand() % 8);
 }
 
+void
+set_guild_zone(short index, int zone_index)
+{
+	struct mob_server_st *mob = &g_mobs[zone_index];
+	struct guildzone_st zone = g_guild_zone[zone_index];
+
+	if (mob->mob.current.X >= zone.city_min_x && mob->mob.current.X <= zone.city_max_x && mob->mob.current.Y >= zone.city_min_y && mob->mob.current.Y <= zone.city_max_y) {
+		mob->mob.info.city_id = zone_index;
+		return;
+	}
+
+	mob->mob.info.city_id = 0;
+}
+
 short
 get_item_ability(struct item_st *item, int effect)
 {

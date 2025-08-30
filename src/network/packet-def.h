@@ -274,5 +274,11 @@ struct packet_door
 	int status;
 };
 
+// 291H
+struct packet_request_change_city
+{
+	struct packet_header header;
+	int city_id;
+};
 
 #endif

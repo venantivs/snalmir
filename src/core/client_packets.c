@@ -18,6 +18,26 @@
 #include "world.h"
 
 bool
+request_return_char_list(int user_index) {
+	return true;
+}
+
+bool
+request_update_city(struct packet_request_change_city *request_change_city, int user_index)
+{
+	if (user_index < 0 || user_index > MAX_USERS_PER_CHANNEL)
+		return false;
+
+	unsigned int index = request_change_city->city_id;
+	if (index > 3)
+		return false;
+
+	set_guild_zone(user_index, user_index);
+
+	return true;
+}
+
+bool
 request_logout_char(int user_index)
 {
 	struct user_server_st *user = &g_users[user_index];
@@ -64,11 +84,6 @@ request_logout_char(int user_index)
 
 	send_all_packets(user_index);
 
-	return true;
-}
-
-bool
-request_return_char_list(int user_index) {
 	return true;
 }
 
