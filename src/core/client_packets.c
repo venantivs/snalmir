@@ -19,6 +19,43 @@
 
 bool
 request_return_char_list(int user_index) {
+	struct mob_server_st *mob = &g_mobs[user_index];
+
+	if (g_users[user_index].server_data.mode == USER_PLAY) {
+		for (size_t i = 0; i < MAX_PARTY; i++) {
+			int baby_mob_index = mob->baby_mob[i];
+			if (baby_mob_index <= 0)
+				continue;
+
+			if (baby_mob_index <= MAX_USERS_PER_CHANNEL || baby_mob_index >= MAX_SPAWN_LIST) {
+				mob->baby_mob[i] = 0;
+				continue;
+			}
+
+			struct mob_server_st *baby_mob = &g_mobs[baby_mob_index];
+
+			if (!is_summon(*baby_mob)) {
+				mob->baby_mob[i] = 0;
+				continue;
+			}
+
+			remove_object(baby_mob_index, baby_mob->mob.current, WORLD_MOB);
+			send_remove_mob(baby_mob_index, baby_mob_index, DELETE_UNSPAWN);
+			clear_property(baby_mob);
+			mob->baby_mob[i] = 0;
+		}
+	}
+
+	save_character(user_index, 1);
+	save_client(user_index);
+	remove_object(user_index, mob->mob.current, WORLD_MOB);
+	send_remove_mob(user_index, user_index, DELETE_NORMAL);
+	send_signal(0x116, user_index);
+
+	g_users[user_index].server_data.mode = USER_SELCHAR;
+	
+	clear_property(mob);
+
 	return true;
 }
 
