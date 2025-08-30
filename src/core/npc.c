@@ -19,7 +19,7 @@
 #include "base_functions.h"
 #include "utils.h"
 
-struct npcgener_st gener_list[MAX_NPCGENERATOR];
+struct npcgener_st g_gener_list[MAX_NPCGENERATOR];
 struct mob_st baby_list[MAX_MOB_BABY];
 unsigned load_npc_count = 0;
 unsigned spawn_count = 0;
@@ -27,7 +27,7 @@ unsigned spawn_count = 0;
 void
 load_npcs()
 {
-  memset(gener_list, 0, sizeof(struct npcgener_st) * MAX_NPCGENERATOR);
+  memset(g_gener_list, 0, sizeof(struct npcgener_st) * MAX_NPCGENERATOR);
   memset(baby_list, 0, sizeof(struct mob_st) * MAX_MOB_BABY);
   load_npc_count = 0;
 
@@ -59,8 +59,8 @@ read_npc_generator()
       }
 
       for(; index < MAX_NPCGENER; index++)
-      if (gener_list[index].mode == NPCG_EMPTY) {
-        gener_list[index].mode = NPCG_CHARGED;
+      if (g_gener_list[index].mode == NPCG_EMPTY) {
+        g_gener_list[index].mode = NPCG_CHARGED;
         break;
       }
 
@@ -79,7 +79,7 @@ read_npc_generator()
       continue;
 
     if (index != -1) {
-      struct npcgener_st *npc_mob = &gener_list[index];
+      struct npcgener_st *npc_mob = &g_gener_list[index];
 
       if (strcmp(cmd, "Mob") == 0) {
         load_npc(val, index);
@@ -116,7 +116,7 @@ read_npc_generator()
   }
 
   for (unsigned i = 0; i < load_npc_count; i++) {
-    struct npcgener_st *npcgener = &gener_list[i];
+    struct npcgener_st *npcgener = &g_gener_list[i];
     for (unsigned j = 0; j < npcgener->max_num_mob; j++) {
       npcgener->group[j] = npcgener->index + j;
     } 
@@ -142,7 +142,7 @@ load_npc(const char *name, int index)
     fatal_error(error);
   }
 
-  struct npcgener_st *npc_mob = &gener_list[index];
+  struct npcgener_st *npc_mob = &g_gener_list[index];
   struct mob_st new_mob = { 0 };
 
   fread(&new_mob, sizeof(struct mob_st), 1, npc_fd);
@@ -203,15 +203,15 @@ void
 spawn_mobs()
 {
   for (size_t i = 0; i < load_npc_count; i++) {
-    struct npcgener_st *npc_mob = &gener_list[i];
+    struct npcgener_st *npc_mob = &g_gener_list[i];
     struct mob_st *mob = &npc_mob->mob;
 
     bool is_pesa_mob = false;
     // TODO: IMPLEMENTAR ISSO AQUI
     // struct pesadelo_st *pesadelo = &GLOBALpesadelo;
-    // if ((i >= pesadelo->mobs[PesaN][0] && i <= pesadelo->mobs[PesaN][8]) ||
-    //     (i >= pesadelo->mobs[PesaM][0] && i <= pesadelo->mobs[PesaM][8]) ||
-    //     (i >= pesadelo->mobs[PesaA][0] && i <= pesadelo->mobs[PesaA][8])) {
+    // if ((i >= pesadelo->g_mobs[PesaN][0] && i <= pesadelo->g_mobs[PesaN][8]) ||
+    //     (i >= pesadelo->g_mobs[PesaM][0] && i <= pesadelo->g_mobs[PesaM][8]) ||
+    //     (i >= pesadelo->g_mobs[PesaA][0] && i <= pesadelo->g_mobs[PesaA][8])) {
     //       is_pesa_mob = true;
     //     }
 
@@ -245,9 +245,9 @@ spawn_mobs()
           continue;
         }
 
-        struct mob_server_st *current_mob = &mobs[index];
+        struct mob_server_st *current_mob = &g_mobs[index];
         memset(&current_mob->mob, 0, sizeof(struct mob_st));
-        memcpy(&current_mob->mob, &gener_list[i].mob, sizeof(struct mob_st));
+        memcpy(&current_mob->mob, &g_gener_list[i].mob, sizeof(struct mob_st));
 
         current_mob->mode = MOB_IDLE;
         current_mob->mob.client_index = index;
@@ -304,7 +304,7 @@ action_mob(int sec_counter)
 	short newPosY = 0;
 
 	for (size_t i = (BASE_MOB + 1); i <= spawn_count; i++) {
-    struct mob_server_st *mob = &mobs[i];
+    struct mob_server_st *mob = &g_mobs[i];
 
 		if (is_dead(*mob)) {
       continue;
@@ -312,20 +312,20 @@ action_mob(int sec_counter)
 			int action = standby_processor(mob);
 			switch (action) {
 			case ACTION_MOVE:
-				newPosX = (gener_list[mob->generate_index].dest.position.X + (rand() % 3));
-				newPosY = (gener_list[mob->generate_index].dest.position.Y + (rand() % 3));
+				newPosX = (g_gener_list[mob->generate_index].dest.position.X + (rand() % 3));
+				newPosY = (g_gener_list[mob->generate_index].dest.position.Y + (rand() % 3));
 				movement(mob, newPosX, newPosY, MOVE_NORMAL);
 				break;
 			
 			case ACTION_MOVE_RAND:
-				newPosX = (gener_list[mob->generate_index].start.position.X + (rand() % 3));
-				newPosY = (gener_list[mob->generate_index].start.position.Y + (rand() % 3));
+				newPosX = (g_gener_list[mob->generate_index].start.position.X + (rand() % 3));
+				newPosY = (g_gener_list[mob->generate_index].start.position.Y + (rand() % 3));
 				movement(mob, newPosX, newPosY, MOVE_NORMAL);
 				break;
 
 			case ACTION_MOVE_TO_SUMMONER:
-				newPosX = (mobs[mob->summoner].mob.current.X);
-				newPosY = (mobs[mob->summoner].mob.current.Y);
+				newPosX = (g_mobs[mob->summoner].mob.current.X);
+				newPosY = (g_mobs[mob->summoner].mob.current.Y);
 				movement(mob, newPosX, newPosY, MOVE_TELEPORT);
 				break;
 

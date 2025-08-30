@@ -32,32 +32,32 @@
 #include "../general-config.h"
 #include "server.h"
 
-struct user_server_st users[MAX_USERS_PER_CHANNEL];
+struct user_server_st g_users[MAX_USERS_PER_CHANNEL];
 struct user_server_st temp_user;
-struct mob_server_st mobs[30000];
-struct ground_item_st ground_items[4096];
-struct party_st parties[500];
+struct mob_server_st g_mobs[30000];
+struct ground_item_st g_ground_items[4096];
+struct party_st g_parties[500];
 struct settings_st server_settings;
 
 /* DB */
-struct account_file_st users_db[MAX_USERS_PER_CHANNEL];
-struct mob_st base_char_mobs[MOB_PER_ACCOUNT];
+struct account_file_st g_users_db[MAX_USERS_PER_CHANNEL];
+struct mob_st g_base_char_mobs[MOB_PER_ACCOUNT];
 
 unsigned long current_time;
 int current_weather;
 
 bool loading_ready = false;
-int sec_counter = 0;
-int min_counter = 0;
+int g_sec_counter = 0;
+int g_min_counter = 0;
 
 static void start_server();
 
 static void 
 min_timer()
 {
-	min_counter++;
+	g_min_counter++;
 
-	if (min_counter % 10 == 0) {
+	if (g_min_counter % 10 == 0) {
 		// Clear quests
 	}
 }
@@ -69,17 +69,17 @@ sec_timer()
 	if (!loading_ready)
 		return;
 
-	sec_counter++;
+	g_sec_counter++;
 	current_time = (unsigned long) time(NULL);
 
 	spawn_mobs();
-	action_mob(sec_counter);
+	action_mob(g_sec_counter);
 
-	if (sec_counter % 60 == 0)
+	if (g_sec_counter % 60 == 0)
 		min_timer();
 
 	for (size_t i = 1; i <= MAX_USERS_PER_CHANNEL; i++) {
-		struct user_server_st *user = &users[i];
+		struct user_server_st *user = &g_users[i];
 		
 		if (user->server_data.user_close) {
 			send_all_messages(i);
@@ -91,7 +91,7 @@ sec_timer()
 			continue;
 
 		if (user->server_data.mode == USER_PLAY)
-			processor_sec_timer_mob(&mobs[i], sec_counter);
+			processor_sec_timer_mob(&g_mobs[i], g_sec_counter);
 
 		time_t now = time(NULL);
 
@@ -115,22 +115,27 @@ sec_timer()
 void
 *init_server()
 {
-	memset(users, 0, sizeof(struct user_server_st) * MAX_USERS_PER_CHANNEL);
+	memset(g_users, 0, sizeof(struct user_server_st) * MAX_USERS_PER_CHANNEL);
 	memset(&temp_user, 0, sizeof(struct user_server_st));
-	memset(mobs, 0, sizeof(struct mob_server_st) * MAX_SPAWN_LIST);
-	memset(ground_items, 0, sizeof(struct ground_item_st) * 4096);
-	memset(parties, -1, sizeof(struct party_st) * 500);
+	memset(g_mobs, 0, sizeof(struct mob_server_st) * MAX_SPAWN_LIST);
+	memset(g_ground_items, 0, sizeof(struct ground_item_st) * 4096);
+	memset(g_parties, -1, sizeof(struct party_st) * 500);
 	memset(&server_settings, 0, sizeof(struct settings_st));
 
 	/* DB */
-	memset(users_db, 0, sizeof(struct account_file_st) * MAX_USERS_PER_CHANNEL);
-	memset(base_char_mobs, 0, sizeof(struct mob_st) * MOB_PER_ACCOUNT);
+	memset(g_users_db, 0, sizeof(struct account_file_st) * MAX_USERS_PER_CHANNEL);
+	memset(g_base_char_mobs, 0, sizeof(struct mob_st) * MOB_PER_ACCOUNT);
 
 	current_time = 0;
 	current_weather = 0;
 
-	sec_counter = 0;
-	min_counter = 0;
+	g_sec_counter = 0;
+	g_min_counter = 0;
+
+	load_game_items();
+	load_game_skills();
+	load_base_char_mobs();
+	load_npcs();
 
 	struct itimerval it_val;
 
@@ -146,11 +151,6 @@ void
   if (setitimer(ITIMER_REAL, &it_val, NULL) == -1)
 		fatal_error("setitimer");
 
-	load_game_items();
-	load_game_skills();
-	load_base_char_mobs();
-	load_npcs();
-	printf("DONE LOADING!\n");
 	start_server();
 
 	return NULL;
@@ -191,7 +191,7 @@ get_user_index_from_socket(int socket_fd)
 
 	/* Implementação burra, adiciona complexidade O(n) (((aparentemente))) desnecessária a cada evento do epoll. */
 	for (size_t i = 1; i < MAX_USERS_PER_CHANNEL; i++)
-		if (users[i].server_data.socket_fd == socket_fd)
+		if (g_users[i].server_data.socket_fd == socket_fd)
 			return i;
 
 	return -1;
@@ -201,7 +201,7 @@ static int
 get_empty_user(void)
 {
 	for (size_t i = 1; i < MAX_USERS_PER_CHANNEL; i++)
-		if (users[i].server_data.mode == USER_EMPTY)
+		if (g_users[i].server_data.mode == USER_EMPTY)
 			return i;
 
 	return -1;
@@ -211,7 +211,7 @@ static void
 print_buffer(int user_index)
 {
 	for (size_t i = 0; i < 1024; i++)
-		printf("%hhx ", users[user_index].server_data.buffer.recv_buffer[i]);
+		printf("%hhx ", g_users[user_index].server_data.buffer.recv_buffer[i]);
 
 	printf("\n");
 }
@@ -297,7 +297,7 @@ start_server()
 				if (user_index < 0)
 					done = true;
 
-				if (users[user_index].server_data.mode == USER_EMPTY)
+				if (g_users[user_index].server_data.mode == USER_EMPTY)
 					done = true;
 
 				if (user_index > MAX_USERS_PER_CHANNEL) {
@@ -306,7 +306,7 @@ start_server()
 				}
 
 				if (!receive(user_index)) {
-					users[user_index].server_data.user_close = true;
+					g_users[user_index].server_data.user_close = true;
 					done = true;
 				}
 
@@ -321,7 +321,7 @@ start_server()
 						break;
 
 					if (!segregate_packet(message, user_index)) {
-						users[user_index].server_data.user_close = true;
+						g_users[user_index].server_data.user_close = true;
 						done = true;
 						break;
 					}
@@ -329,7 +329,7 @@ start_server()
 
 				if (done) {
 					if (user_index >= 0 && user_index < MAX_USERS_PER_CHANNEL)
-						users[user_index].server_data.mode = USER_EMPTY;
+						g_users[user_index].server_data.mode = USER_EMPTY;
 
 					printf("Closed connection on fd %d.\n", events[i].data.fd);
 

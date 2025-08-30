@@ -14,8 +14,8 @@
 #include "utils.h"
 #include "game_items.h"
 
-struct item_list_st item_list[MAX_ITEM_LIST];
-struct ground_item_st init_list[MAX_INIT_ITEM_LIST];
+struct item_list_st g_item_list[MAX_ITEM_LIST];
+struct ground_item_st g_init_list[MAX_INIT_ITEM_LIST];
 int init_index, max_item_load, max_init_item;
 char effect_name_list[MAX_EFFECT_INDEX][MAX_EFFECT_NAME];
 
@@ -58,7 +58,7 @@ load_init_items()
   if (init_item_fd == NULL)
     fatal_error("Could not load InitItem.csv");
 
-  memset(init_list, -1, sizeof(struct ground_item_st) * MAX_INIT_ITEM_LIST);
+  memset(g_init_list, -1, sizeof(struct ground_item_st) * MAX_INIT_ITEM_LIST);
   init_index = 0;
 
   struct item_st item = { 0 };
@@ -76,17 +76,17 @@ load_init_items()
     }
 
     memset(&item, 0, sizeof(struct item_st));
-    memset(&init_list[init_index], 0, sizeof(struct ground_item_st));
+    memset(&g_init_list[init_index], 0, sizeof(struct ground_item_st));
 
-    int read_fields = sscanf(tmp, "%hd %hd %hd %hd", &item.item_id, &init_list[init_index].position.X, &init_list[init_index].position.Y, &init_list[init_index].rotation);
+    int read_fields = sscanf(tmp, "%hd %hd %hd %hd", &item.item_id, &g_init_list[init_index].position.X, &g_init_list[init_index].position.Y, &g_init_list[init_index].rotation);
     if (read_fields < 4) continue;
 
-    init_list[init_index].item_index = init_index;
-    init_list[init_index].drop_time = clock();
-    init_list[init_index].owner_id = 0x7530; // ??????
-    init_list[init_index].status = 3; // ????
+    g_init_list[init_index].item_index = init_index;
+    g_init_list[init_index].drop_time = clock();
+    g_init_list[init_index].owner_id = 0x7530; // ??????
+    g_init_list[init_index].status = 3; // ????
 
-    memcpy(&init_list[init_index].item_data, &item, sizeof(struct item_st));
+    memcpy(&g_init_list[init_index].item_data, &item, sizeof(struct item_st));
     init_index++;
 
     if (init_index > max_init_item) max_init_item = init_index;
@@ -110,8 +110,8 @@ get_effect_value(short item_id, char effect)
 {
 	if (item_id >= 0 && item_id <= MAX_ITEM_LIST) {
 		for (size_t i = 0; i < MAX_EFFECT; i++) {
-      if (item_list[item_id].effect[i].index == effect)
-			  return item_list[item_id].effect[i].value;
+      if (g_item_list[item_id].effect[i].index == effect)
+			  return g_item_list[item_id].effect[i].value;
     }
 	}
 
@@ -126,7 +126,7 @@ load_item_list()
   if (item_list_fd == NULL)
     fatal_error("Could not load ItemList.csv");
 
-  memset(item_list, 0, sizeof(struct item_list_st) * MAX_INIT_ITEM_LIST);
+  memset(g_item_list, 0, sizeof(struct item_list_st) * MAX_INIT_ITEM_LIST);
 
   int item_id, fields_read;
   struct item_list_st item = { 0 };
@@ -167,7 +167,7 @@ load_item_list()
     for(size_t i = 0; i < MAX_EFFECT; i++)
       item.effect[i].index = get_effect_index(effect_buffer[i]);
 
-    memcpy(&item_list[item_id], &item, sizeof(struct item_list_st));
+    memcpy(&g_item_list[item_id], &item, sizeof(struct item_list_st));
     if (item_id > max_item_load) max_item_load = item_id;
   }
   fclose(item_list_fd);

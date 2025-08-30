@@ -13,7 +13,7 @@
 #include "utils.h"
 #include "game_skills.h"
 
-struct skill_data_st skill_data[MAX_SKILL_DATA];
+struct skill_data_st g_skill_data[MAX_SKILL_DATA];
 
 void
 load_skill_data()
@@ -47,15 +47,16 @@ load_skill_data()
 
     if (index < 0 || index >= MAX_SKILL_DATA) continue;
 
-    memcpy(&skill_data[index], &spell, sizeof(struct skill_data_st));
+    memcpy(&g_skill_data[index], &spell, sizeof(struct skill_data_st));
   }
+
   fclose(skill_data_fd);
 }
 
 void 
 load_game_skills()
 {
-  memset(skill_data, 0, sizeof(struct skill_data_st) * MAX_SKILL_DATA);
+  memset(g_skill_data, 0, sizeof(struct skill_data_st) * MAX_SKILL_DATA);
 
   load_skill_data();
 }

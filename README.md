@@ -37,7 +37,7 @@ Por ser um projeto para estudos, o objetivo foi simplificar ao máximo as compli
 - [ ] Substuição dos tipos nativos pelos mais intuitivos definidos em `stdint.h`.
 - [ ] Adição de nome de parãmetros nas declarações de funções nos arquivos de cabeçalho.
 - [ ] Renomear funções de rede que contenham `message` para `packet`.
-- [ ] Colocar prefixo g_ em variáveis globais.
+- [x] Colocar prefixo g_ em variáveis globais.
 
 ## Setup & Execução
 ```bash

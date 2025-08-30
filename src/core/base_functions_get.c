@@ -32,7 +32,7 @@ size_t
 get_spawn_empty_index()
 {
   for (size_t i = (BASE_MOB + 1); i < MAX_SPAWN_LIST; i++) {
-    if (mobs[i].mode == MOB_EMPTY)
+    if (g_mobs[i].mode == MOB_EMPTY)
       return i;
   }
 
@@ -43,7 +43,7 @@ void
 get_create_item(int item_index)
 {
 	struct packet_create_ground_item create_ground_item;
-	struct ground_item_st *init = &ground_items[item_index];
+	struct ground_item_st *init = &g_ground_items[item_index];
 	create_ground_item.header.index = 0x7530;
 	create_ground_item.header.operation_code = 0x26E;
 	create_ground_item.header.size = sizeof(struct packet_create_ground_item);
@@ -191,7 +191,7 @@ get_anct_code(struct item_st *item)
 void
 get_action(int mob_index, short posX, short posY, int type, char *command)
 {
-	struct mob_st *mob = &mobs[mob_index].mob;
+	struct mob_st *mob = &g_mobs[mob_index].mob;
 
 	struct packet_request_action request_action;
 	request_action.header.size = sizeof(struct packet_request_action);
@@ -232,18 +232,18 @@ get_affect(int offset, struct affect_st *skills, unsigned char *buffer)
 
 int
 get_pk_points(int mob_index) {
-	return mobs[mob_index].mob.inventory[63].effect[0].index;
+	return g_mobs[mob_index].mob.inventory[63].effect[0].index;
 }
 
 int
 get_current_kills(int mob_index) {
-	return mobs[mob_index].mob.inventory[63].effect[0].value;
+	return g_mobs[mob_index].mob.inventory[63].effect[0].value;
 }
 
 int
 get_total_kills(int mob_index) {
-	unsigned char f_tFrag = mobs[mob_index].mob.inventory[63].effect[1].value;
-	unsigned char s_tFrag = mobs[mob_index].mob.inventory[63].effect[2].value;
+	unsigned char f_tFrag = g_mobs[mob_index].mob.inventory[63].effect[1].value;
+	unsigned char s_tFrag = g_mobs[mob_index].mob.inventory[63].effect[2].value;
 
 	return f_tFrag + (s_tFrag << 8);
 }
@@ -290,14 +290,14 @@ set_total_kills(int mob_index, int frag)
 	else if (frag > 9999)
 		frag = 9999;
 
-	mobs[mob_index].mob.inventory[63].effect[1].value = frag & 255;
-	mobs[mob_index].mob.inventory[63].effect[2].value = frag >> 8;
+	g_mobs[mob_index].mob.inventory[63].effect[1].value = frag & 255;
+	g_mobs[mob_index].mob.inventory[63].effect[2].value = frag >> 8;
 }
 
 int
 get_guilty(int mob_index)
 {
-	unsigned char *guilty = &mobs[mob_index].mob.inventory[63].effect[1].index;
+	unsigned char *guilty = &g_mobs[mob_index].mob.inventory[63].effect[1].index;
 	if (*guilty > 50)
 		*guilty = 0;
 
@@ -307,7 +307,7 @@ get_guilty(int mob_index)
 void
 get_create_mob(int create_index, int send_index)
 {
-	struct mob_st *npc_mob = &mobs[create_index].mob;
+	struct mob_st *npc_mob = &g_mobs[create_index].mob;
 
 	struct packet_spawn_info spawn_info;
 	memset(&spawn_info, 0xCC, sizeof(struct packet_spawn_info));
@@ -319,7 +319,7 @@ get_create_mob(int create_index, int send_index)
 	spawn_info.position.Y = npc_mob->last_position.Y;
 	spawn_info.spawn.member_type = npc_mob->guild_member_type * 0x40;
 
-	if (mobs[create_index].guild_disable == 0 && create_index <= MAX_USERS_PER_CHANNEL) {
+	if (g_mobs[create_index].guild_disable == 0 && create_index <= MAX_USERS_PER_CHANNEL) {
 		spawn_info.guild_index = npc_mob->guild_id;
 		spawn_info.spawn.member_type = npc_mob->guild_member_type * 0x40;
 	} else if (create_index <= MAX_USERS_PER_CHANNEL) {
@@ -327,7 +327,7 @@ get_create_mob(int create_index, int send_index)
 		spawn_info.spawn.member_type = 0;
 	}
 
-	strncpy(spawn_info.name, npc_mob->name, 16);
+	strncpy(spawn_info.name, npc_mob->name, sizeof(spawn_info.name));
 	memcpy(&spawn_info.status, &npc_mob->status, sizeof(struct status_st));
 
 	if (create_index < MAX_USERS_PER_CHANNEL) {
@@ -339,7 +339,7 @@ get_create_mob(int create_index, int send_index)
 			spawn_info.chaos_points = 0;
 	}
 
-	spawn_info.spawn.type = mobs[create_index].spawn_type;
+	spawn_info.spawn.type = g_mobs[create_index].spawn_type;
 
 	for (size_t i = 0; i < 16; i++) {
 		struct item_st *equipped_item = &npc_mob->equip[i];
@@ -368,7 +368,7 @@ get_create_mob(int create_index, int send_index)
 		spawn_info.status.current_hp = npc_mob->status.current_hp;
 		spawn_info.status.current_mp = npc_mob->status.current_mp;
 	} else {
-		if (is_dead(mobs[create_index])) {
+		if (is_dead(g_mobs[create_index])) {
 			spawn_info.status.current_hp = 0;
 			spawn_info.status.current_mp = 0;
 		} else {
@@ -389,7 +389,7 @@ get_guild_zone(struct mob_server_st mob, short *position_x, short *position_y)
 		return;
 	}
 
-	struct guildzone_st zone = guild_zone[mob.mob.info.city_id];
+	struct guildzone_st zone = g_guild_zone[mob.mob.info.city_id];
 
 	*position_x = zone.city_x + (rand() % 8);
 	*position_y = zone.city_y + (rand() % 8);
@@ -402,8 +402,8 @@ get_item_ability(struct item_st *item, int effect)
 
 	//CheckItemIndex(item->item_id, return result);
 
-	int unique = item_list[item->item_id].unique;
-	int pos = item_list[item->item_id].pos;
+	int unique = g_item_list[item->item_id].unique;
+	int pos = g_item_list[item->item_id].pos;
 
 	if (effect == EF_DAMAGEADD || effect == EF_MAGICADD)
 	if (unique < 41 || unique > 50)
@@ -431,23 +431,23 @@ get_item_ability(struct item_st *item, int effect)
 	result += ItemList[item->item_id].Level;
 	*/
 	if (effect == EF_REQ_STR)
-		result += item_list[item->item_id].strength;
+		result += g_item_list[item->item_id].strength;
 	if (effect == EF_REQ_INT)
-		result += item_list[item->item_id].intelligence;
+		result += g_item_list[item->item_id].intelligence;
 	if (effect == EF_REQ_DEX)
-		result += item_list[item->item_id].dexterity;
+		result += g_item_list[item->item_id].dexterity;
 	if (effect == EF_REQ_CON)
-		result += item_list[item->item_id].constitution;
+		result += g_item_list[item->item_id].constitution;
 
 	if (effect == EF_POS)
-		result += item_list[item->item_id].pos;
+		result += g_item_list[item->item_id].pos;
 
 	if (effect != EF_INCUBATE) {
 		for (size_t i = 0; i < 12; i++) {
-			if (item_list[item->item_id].effect[i].index != effect)
+			if (g_item_list[item->item_id].effect[i].index != effect)
 				continue;
 
-			int val = item_list[item->item_id].effect[i].value;
+			int val = g_item_list[item->item_id].effect[i].value;
 			if (effect == EF_ATTSPEED && val == 1)
 				val = 10;
 
@@ -509,10 +509,10 @@ get_item_ability(struct item_st *item, int effect)
 
 	if (effect == EF_RESIST1 || effect == EF_RESIST2 || effect == EF_RESIST3 || effect == EF_RESIST4) {
 		for (size_t i = 0; i < 12; i++) {
-			if (item_list[item->item_id].effect[i].index != EF_RESISTALL)
+			if (g_item_list[item->item_id].effect[i].index != EF_RESISTALL)
 				continue;
 
-			result += item_list[item->item_id].effect[i].value;
+			result += g_item_list[item->item_id].effect[i].value;
 			break;
 		}
 
@@ -849,14 +849,14 @@ get_affect_score(struct mob_server_st *user)
 void
 get_current_score(int user_index)
 {
-	struct mob_st *user = &mobs[user_index].mob;
+	struct mob_st *user = &g_mobs[user_index].mob;
 
 	if (user_index >= BASE_MOB) {
-		get_affect_score(&mobs[user_index]);
+		get_affect_score(&g_mobs[user_index]);
 		return;
 	}
 
-	mobs[user_index].bonus_pvm = 0;
+	g_mobs[user_index].bonus_pvm = 0;
 	int special[4] = { 0 };
 	int special_all = 0;
 
@@ -1107,13 +1107,13 @@ get_current_score(int user_index)
 				int s = 0;
 				for (size_t y = 801; y < 1001; y++) {
 					// TODO: Trocar por switch
-					if (item_list[y].extreme == item_id)
+					if (g_item_list[y].extreme == item_id)
 						s = 1;
-					else if (item_list[y].extreme == (item_id - 1))
+					else if (g_item_list[y].extreme == (item_id - 1))
 						s = 2;
-					else if (item_list[y].extreme == (item_id - 2))
+					else if (g_item_list[y].extreme == (item_id - 2))
 						s = 3;
-					else if (item_list[y].extreme == (item_id - 3))
+					else if (g_item_list[y].extreme == (item_id - 3))
 						s = 4;
 
 					if (s == 2)
@@ -1128,13 +1128,13 @@ get_current_score(int user_index)
 				int s = 0;
 				for (size_t y = 1901; y < 1912; y++) {
 					// TODO: Trocar por switch
-					if (item_list[y].extreme == item_id)
+					if (g_item_list[y].extreme == item_id)
 						s = 1;
-					else if (item_list[y].extreme == (item_id - 1))
+					else if (g_item_list[y].extreme == (item_id - 1))
 						s = 2;
-					else if (item_list[y].extreme == (item_id - 2))
+					else if (g_item_list[y].extreme == (item_id - 2))
 						s = 3;
-					else if (item_list[y].extreme == (item_id - 3))
+					else if (g_item_list[y].extreme == (item_id - 3))
 						s = 4;
 
 					if (s == 2)
@@ -1197,7 +1197,7 @@ get_current_score(int user_index)
 		user->evasion += base_mount_info[mount_id].evasion >> 1;
 	}
 
-	get_affect_score(&mobs[user_index]);
+	get_affect_score(&g_mobs[user_index]);
 }
 
 bool
@@ -1230,7 +1230,7 @@ get_bonus_skill_points(struct mob_st *user)
 	int pts = 0, next = 1;
 	for (size_t i = 0; i < 24; i++) {
 		if ((user->learn & next) != 0)
-			pts += skill_data[((classid * 24) + i)].points;
+			pts += g_skill_data[((classid * 24) + i)].points;
 
 		next <<= 1;
 	}
@@ -1272,7 +1272,7 @@ get_mob_ability(struct mob_st *user, int effect)
 			continue;
 
 		if (LOCAL_19 >= 1 && LOCAL_19 <= 5)
-			LOCAL_18[LOCAL_19] = item_list[LOCAL_20].unique;
+			LOCAL_18[LOCAL_19] = g_item_list[LOCAL_20].unique;
 
 		if (effect == EF_DAMAGE && LOCAL_19 == 6)
 			continue;
@@ -1289,11 +1289,11 @@ get_mob_ability(struct mob_st *user, int effect)
 
 			int unique1 = 0;
 			if (arm1 > 0 && arm1 < MAX_ITEM_LIST)
-				unique1 = item_list[arm1].unique;
+				unique1 = g_item_list[arm1].unique;
 
 			int unique2 = 0;
 			if (arm2 > 0 && arm2 < MAX_ITEM_LIST)
-				unique2 = item_list[arm2].unique;
+				unique2 = g_item_list[arm2].unique;
 
 			if (unique1 != 0 && unique2 != 0) {
 				int porc = 0;
@@ -1567,7 +1567,7 @@ get_bonus_master_points(struct mob_st *user)
 int
 get_current_hp(int user_index)
 {
-	struct mob_st user = mobs[user_index].mob;
+	struct mob_st user = g_mobs[user_index].mob;
 
 	static const int HPIncrementPerLevel[4] = {
 		4, // Transknight
@@ -1601,7 +1601,7 @@ get_current_hp(int user_index)
 int
 get_current_mp(int user_index)
 {
-	struct mob_st user = mobs[user_index].mob;
+	struct mob_st user = g_mobs[user_index].mob;
 
 	static const int MPIncrementPerLevel[4] = {
 		1, // Transknight
@@ -1634,7 +1634,7 @@ get_current_mp(int user_index)
 int
 check_pvp_area(int mob_index)
 {
-	struct mob_st mob = mobs[mob_index].mob;
+	struct mob_st mob = g_mobs[mob_index].mob;
 
 	////MENOS CP / COM FRAG
 	if (mob.current.X >= 3330 && mob.current.Y >= 1026 && mob.current.X <= 3600 && mob.current.Y <= 1660) return 2;//Area das Pistas de Runas
@@ -1700,14 +1700,14 @@ set_pk_points(int mob_index, int pk_points)
 	else if (pk_points > 150)
 		pk_points = 150;
 
-	mobs[mob_index].mob.inventory[63].effect[0].index = pk_points;
+	g_mobs[mob_index].mob.inventory[63].effect[0].index = pk_points;
 }
 
 unsigned int
 get_exp_by_kill(unsigned int exp, int attacker_index, int target_index)
 {
-	struct mob_st *attacker = &mobs[attacker_index].mob;
-	struct mob_st *target = &mobs[target_index].mob;
+	struct mob_st *attacker = &g_mobs[attacker_index].mob;
+	struct mob_st *target = &g_mobs[target_index].mob;
 
 	if ((attacker->class_master == CLASS_CELESTIAL || attacker->class_master == CLASS_SUB_CELESTIAL && attacker->equip[CAPE_SLOT].item_id >= 3197 && attacker->equip[CAPE_SLOT].item_id <= 3199)
 		|| (target->class_master == CLASS_CELESTIAL || target->class_master == CLASS_SUB_CELESTIAL && target->equip[CAPE_SLOT].item_id >= 3197 && target->equip[CAPE_SLOT].item_id <= 3199)) { //Celestial e Sub
@@ -1813,7 +1813,7 @@ get_exp_by_kill(unsigned int exp, int attacker_index, int target_index)
 int
 get_item_slot(int user_index, int item_id, int type)
 {
-	struct mob_st *mob = &mobs[user_index].mob;
+	struct mob_st *mob = &g_mobs[user_index].mob;
 
 	if (type == INV_TYPE) {
 		bool bkp1 = false;
@@ -1846,7 +1846,7 @@ get_item_slot(int user_index, int item_id, int type)
 
 	if (type == STORAGE_TYPE) {
 		for (size_t x = 0; x < 128; x++) {
-			if (users[user_index].storage[x].item_id == item_id)
+			if (g_users[user_index].storage[x].item_id == item_id)
 				return x;
 		}
 	}

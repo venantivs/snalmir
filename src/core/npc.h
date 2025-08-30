@@ -7,8 +7,8 @@
 
 #include "base-def.h"
 
-extern struct npcgener_st gener_list[MAX_NPCGENERATOR];
-extern struct mob_st baby_list[MAX_MOB_BABY];
+extern struct npcgener_st g_gener_list[MAX_NPCGENERATOR];
+extern struct mob_st g_baby_list[MAX_MOB_BABY];
 
 void load_npcs();
 void read_npc_generator();

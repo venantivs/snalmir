@@ -46,7 +46,7 @@ bool
 search_logged_account(const char *user)
 {
 	for (size_t i = 0; i < MAX_USERS_PER_CHANNEL; i++) {
-		if (strncmp(user, users[i].account_name, 16) == 0)
+		if (strncmp(user, g_users[i].account_name, 16) == 0)
 			return false;
 	}
 
@@ -80,7 +80,7 @@ save_account(int user_index)
 {
 	FILE *user_account = NULL;
 	char file_path[1024] = { 0 };
-	const char *account_name = users_db[user_index].profile.account_name;
+	const char *account_name = g_users_db[user_index].profile.account_name;
 
 	sprintf(file_path, "./bin/accounts/%s", account_name);
 
@@ -89,9 +89,8 @@ save_account(int user_index)
 	if (user_account == NULL)
 		return;
 
-	fwrite(&users_db[user_index].profile, sizeof(struct profile_file_st), 1, user_account);
+	fwrite(&g_users_db[user_index].profile, sizeof(struct profile_file_st), 1, user_account);
 	fclose(user_account);
-	return;	
 }
 
 bool
@@ -125,15 +124,15 @@ char_exists(const char *name)
 bool
 accept_user(int user_index, int socket_fd, unsigned ip, char *ip_str)
 {
-	memset(&users[user_index], 0, sizeof(struct user_server_st));
+	memset(&g_users[user_index], 0, sizeof(struct user_server_st));
 
-	users[user_index].server_data.socket_fd = socket_fd;
+	g_users[user_index].server_data.socket_fd = socket_fd;
 	
 	if (strlen(ip_str) <= 16)
-		strncpy(users[user_index].server_data.ip_str, ip_str, strlen(ip_str));
+		strncpy(g_users[user_index].server_data.ip_str, ip_str, strlen(ip_str));
 
-	users[user_index].server_data.mode = USER_ACCEPT;
-	users[user_index].server_data.index = user_index;
+	g_users[user_index].server_data.mode = USER_ACCEPT;
+	g_users[user_index].server_data.index = user_index;
 
 	return true;
 }
@@ -154,7 +153,7 @@ login_user(struct packet_request_login* request_login, int user_index)
 	request_login->name[11] = '\0'; /* Talvez dê pra fazer isso de outro modo */
 	request_login->password[11] = '\0'; /* Talvez dê pra fazer isso de outro modo */
 
-	struct account_file_st *account = &users_db[user_index];
+	struct account_file_st *account = &g_users_db[user_index];
 
 	bool logged_account = search_logged_account(request_login->name);
 	bool loaded_account = load_account(request_login->name, request_login->password, account, user_index);
@@ -187,14 +186,14 @@ login_user(struct packet_request_login* request_login, int user_index)
 	char_list.gold = account->profile.gold;
 	char_list.cash = account->profile.cash;
 
-	users[user_index].server_data.mode = USER_NUMERIC_PASSWORD;
-	users[user_index].gold = char_list.gold;
-	users[user_index].cash = char_list.cash;
-	strncpy(users[user_index].account_name, request_login->name, 16); /* PARECE BURRICE */
+	g_users[user_index].server_data.mode = USER_NUMERIC_PASSWORD;
+	g_users[user_index].gold = char_list.gold;
+	g_users[user_index].cash = char_list.cash;
+	strncpy(g_users[user_index].account_name, request_login->name, 16); /* PARECE BURRICE */
 
 	load_selchar(account->mob_account, &char_list.sel_list);
 	memcpy(char_list.storage, account->profile.cargo, sizeof(char_list.storage));
-	memcpy(&users[user_index].storage, char_list.storage, sizeof(struct item_st) * MAX_STORAGE);
+	memcpy(&g_users[user_index].storage, char_list.storage, sizeof(struct item_st) * MAX_STORAGE);
 	strncpy(char_list.name, request_login->name, sizeof(char_list.name));
 
 	add_client_message((unsigned char*)&char_list, char_list.header.size, user_index);
@@ -206,7 +205,7 @@ login_user(struct packet_request_login* request_login, int user_index)
 bool
 login_user_numeric(struct packet_request_numeric_password *request_numeric_password, int user_index)
 {
-	struct account_file_st *account = &users_db[user_index];
+	struct account_file_st *account = &g_users_db[user_index];
 
 	// REGEX PARA VALIDAR MENSAGEM
 
@@ -214,7 +213,7 @@ login_user_numeric(struct packet_request_numeric_password *request_numeric_passw
 		if (request_numeric_password->change_numeric != 1) {
 			if (strncmp(request_numeric_password->numeric, account->profile.numeric_password, 6) == 0) {
 				// Senha correta.
-				users[user_index].server_data.mode = USER_SELCHAR;
+				g_users[user_index].server_data.mode = USER_SELCHAR;
 				request_numeric_password->header.operation_code = 0xFDE;
 				send_one_message((unsigned char*) request_numeric_password, xlen(request_numeric_password), user_index);
 				send_client_string_message("Seja bem-vindo ao servidor Snalmir!", user_index);
@@ -242,12 +241,12 @@ login_user_numeric(struct packet_request_numeric_password *request_numeric_passw
 bool
 create_char(struct packet_request_create_char *request_create_char, int user_index)
 {
-	if (users[user_index].server_data.mode != USER_SELCHAR)
+	if (g_users[user_index].server_data.mode != USER_SELCHAR)
 		return false;
 
-	users[user_index].server_data.mode = USER_CREWAIT;
+	g_users[user_index].server_data.mode = USER_CREWAIT;
 
-	struct account_file_st *account  = &users_db[user_index];
+	struct account_file_st *account  = &g_users_db[user_index];
 
 	bool error = false;
 
@@ -287,19 +286,19 @@ create_char(struct packet_request_create_char *request_create_char, int user_ind
 		error = true;
 
 	if (error) {
-		users[user_index].server_data.mode = USER_SELCHAR;
+		g_users[user_index].server_data.mode = USER_SELCHAR;
 		send_signal(0x11A, user_index);
 
 		return true;
 	}
 
-	if (users[user_index].server_data.mode != USER_CREWAIT)
+	if (g_users[user_index].server_data.mode != USER_CREWAIT)
 		return false;
 
 	account->profile.char_info |= 1 << request_create_char->slot_index;
 
 	strncpy(account->profile.mob_name[request_create_char->slot_index], request_create_char->name, 16);
-	memcpy(&account->mob_account[request_create_char->slot_index], &base_char_mobs[request_create_char->class_index], sizeof(struct mob_st));
+	memcpy(&account->mob_account[request_create_char->slot_index], &g_base_char_mobs[request_create_char->class_index], sizeof(struct mob_st));
 	strncpy(mob->name, request_create_char->name, 16);
 	mob->class_master = CLASS_MORTAL;
 
@@ -314,7 +313,7 @@ create_char(struct packet_request_create_char *request_create_char, int user_ind
 	load_selchar(account->mob_account, &char_list.sel_list);
 	send_one_message((unsigned char*) &char_list, xlen(&char_list), user_index);
 
-	users[user_index].server_data.mode = USER_SELCHAR;
+	g_users[user_index].server_data.mode = USER_SELCHAR;
 
 	return true;
 }
@@ -322,12 +321,12 @@ create_char(struct packet_request_create_char *request_create_char, int user_ind
 bool
 delete_char(struct packet_request_delete_char *request_delete_char, int user_index)
 {
-	if (users[user_index].server_data.mode != USER_SELCHAR)
+	if (g_users[user_index].server_data.mode != USER_SELCHAR)
 		return false;
 
-	users[user_index].server_data.mode = USER_DELWAIT;
+	g_users[user_index].server_data.mode = USER_DELWAIT;
 
-	struct account_file_st *account  = &users_db[user_index];
+	struct account_file_st *account  = &g_users_db[user_index];
 
 	bool error = false;
 
@@ -352,13 +351,13 @@ delete_char(struct packet_request_delete_char *request_delete_char, int user_ind
 		error = true;
 
 	if (error) {
-		users[user_index].server_data.mode = USER_SELCHAR;
+		g_users[user_index].server_data.mode = USER_SELCHAR;
 		send_signal(0x11B, user_index);
 
 		return true;
 	}
 
-	if (users[user_index].server_data.mode != USER_DELWAIT)
+	if (g_users[user_index].server_data.mode != USER_DELWAIT)
 		return false;
 
 	memset(mob->name, 0, 16); // Limpa o nome do char da conta.
@@ -374,7 +373,7 @@ delete_char(struct packet_request_delete_char *request_delete_char, int user_ind
 	load_selchar(account->mob_account, &delete_char.sel_list);
 	send_one_message((unsigned char*) &delete_char, xlen(&delete_char), user_index);
 
-	users[user_index].server_data.mode = USER_SELCHAR;
+	g_users[user_index].server_data.mode = USER_SELCHAR;
 
 	return true;
 }
@@ -382,10 +381,10 @@ delete_char(struct packet_request_delete_char *request_delete_char, int user_ind
 bool
 enter_world(struct packet_request_enter_world *request_enter_world, int user_index)
 {
-	if (users[user_index].server_data.mode != USER_SELCHAR)
+	if (g_users[user_index].server_data.mode != USER_SELCHAR)
 		return false;
 
-	struct account_file_st *account = &users_db[user_index];
+	struct account_file_st *account = &g_users_db[user_index];
 
 	bool error = false;
 
@@ -427,7 +426,7 @@ enter_world(struct packet_request_enter_world *request_enter_world, int user_ind
 
 	if (error) {
 		send_client_string_message("Erro ao entrar no jogo.", user_index);
-		users[user_index].server_data.mode = USER_SELCHAR;
+		g_users[user_index].server_data.mode = USER_SELCHAR;
 		return true;
 	}
 
@@ -437,14 +436,14 @@ enter_world(struct packet_request_enter_world *request_enter_world, int user_ind
 	enter_world.header.index = 0x7531;
 	enter_world.character = *mob_account;
 
-	struct mob_server_st *character = &mobs[user_index];
+	struct mob_server_st *character = &g_mobs[user_index];
 	struct mob_st *character_mob = &character->mob;
 
 	memcpy(character_mob, &enter_world.character, sizeof(struct mob_st));
 
 	character->mob.client_index = (short) user_index;
-	users[user_index].server_data.mode = USER_PLAY;
-	mobs[user_index].mode = MOB_USER;
+	g_users[user_index].server_data.mode = USER_PLAY;
+	g_mobs[user_index].mode = MOB_USER;
 
 	get_bonus_score_points(character_mob);
 	get_bonus_master_points(character_mob);
@@ -467,14 +466,14 @@ enter_world(struct packet_request_enter_world *request_enter_world, int user_ind
 	character->mob.last_position.X = position_x;
 	character->mob.last_position.Y = position_y;
 
-	users[user_index].sel_char = character->mob.slot_index;
+	g_users[user_index].sel_char = character->mob.slot_index;
 	character->mob.guild_id = character->mob.equip[12].effect[1].value; // ????
 
 	if (!update_world(user_index, &position_x, &position_y, WORLD_MOB)) {
 		clear_property(character);
 		fprintf(stderr, "UPDATE WORLD FALHOU.\n");
 		send_signal(0x119, user_index);
-		users[user_index].server_data.mode = USER_SELCHAR;
+		g_users[user_index].server_data.mode = USER_SELCHAR;
 		return true;
 	}
 
@@ -513,8 +512,8 @@ enter_world(struct packet_request_enter_world *request_enter_world, int user_ind
 void
 save_client(int user_index)
 {
-	struct user_server_st user = users[user_index];
-	struct account_file_st *account = &users_db[user_index];
+	struct user_server_st user = g_users[user_index];
+	struct account_file_st *account = &g_users_db[user_index];
 
 	if (account != NULL && account->profile.mode >= ACCOUNT_SELCHAR) {
 		account->profile.gold = user.gold;
@@ -530,12 +529,12 @@ save_character(int user_index, int flag)
 {
 	get_current_score(user_index);
 
-	struct mob_st *character = &mobs[user_index].mob;
+	struct mob_st *character = &g_mobs[user_index].mob;
 
 	if ((unsigned) character->slot_index > 3)
 		return;
 
-	struct account_file_st *account = &users_db[user_index];
+	struct account_file_st *account = &g_users_db[user_index];
 	
 	if (account != NULL) {
 		if (character->sub == 2) {
@@ -553,7 +552,7 @@ save_character(int user_index, int flag)
 void
 logout(int user_index)
 {
-	struct account_file_st *user = &users_db[user_index];
+	struct account_file_st *user = &g_users_db[user_index];
 
 	if (user->profile.mode >= ACCOUNT_SELCHAR) {
 		// TODO: DECREMENT PLAYER_COUNT
@@ -571,14 +570,14 @@ logout(int user_index)
 bool
 close_user(int user_index)
 {
-	struct user_server_st *user = &users[user_index];
+	struct user_server_st *user = &g_users[user_index];
 
 	if (user->server_data.mode >= USER_SELCHAR) {
 		save_client(user->server_data.index);
 	}
 
 	if (user->server_data.mode >= USER_PLAY) {
-		struct mob_server_st *mob = &mobs[user->server_data.index];
+		struct mob_server_st *mob = &g_mobs[user->server_data.index];
 
 		for (size_t i = 0; i < MAX_PARTY; i++) {
 			int baby_index = mob->baby_mob[i];
@@ -591,13 +590,13 @@ close_user(int user_index)
 				continue;
 			}
 
-			struct mob_server_st *baby_mob = &mobs[baby_index];
+			struct mob_server_st *baby_mob = &g_mobs[baby_index];
 			if (!is_summon(*baby_mob)) {
 				mob->baby_mob[i] = 0;
 				continue;
 			}
 
-			remove_object(baby_index, mobs[baby_index].mob.current, WORLD_MOB);
+			remove_object(baby_index, g_mobs[baby_index].mob.current, WORLD_MOB);
 			send_remove_mob(baby_index, baby_index, DELETE_UNSPAWN);
 			clear_property(baby_mob);
 
@@ -605,7 +604,7 @@ close_user(int user_index)
 		}
 
 		save_character(user->server_data.index, 1);
-		remove_object(user->server_data.index, mobs[user->server_data.index].mob.current, WORLD_MOB);
+		remove_object(user->server_data.index, g_mobs[user->server_data.index].mob.current, WORLD_MOB);
 		send_remove_mob(user->server_data.index, user->server_data.index, DELETE_NORMAL);
 		clear_property(mob);
 	}
@@ -615,8 +614,8 @@ close_user(int user_index)
 
 	user->server_data.mode = USER_EMPTY;
 	user->server_data.last_recv_time = 0;
-	memset(&user->storage, 0, sizeof(users[user_index].storage));
-	memset(&user->market_info, 0, sizeof(users[user_index].market_info));
+	memset(&user->storage, 0, sizeof(g_users[user_index].storage));
+	memset(&user->market_info, 0, sizeof(g_users[user_index].market_info));
 	memset(user->account_name, 0, 16);
 	user->server_data.index = 0;
 	user->server_data.user_close = false;

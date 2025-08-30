@@ -61,7 +61,7 @@ unsigned char key[] = {
 void
 refresh_recv_buffer(int user_index)
 {
-	struct user_server_buffering_st *buffer = &users[user_index].server_data.buffer;
+	struct user_server_buffering_st *buffer = &g_users[user_index].server_data.buffer;
 	int left = buffer->recv_position - buffer->proc_position;
 
 	if (left <= 0)
@@ -76,7 +76,7 @@ refresh_recv_buffer(int user_index)
 void
 refresh_send_buffer(int user_index)
 {
-	struct user_server_buffering_st *buffer = &users[user_index].server_data.buffer;
+	struct user_server_buffering_st *buffer = &g_users[user_index].server_data.buffer;
 	int left = buffer->send_position - buffer->sent_position;
 
 	if (left <= 0)
@@ -94,7 +94,7 @@ refresh_send_buffer(int user_index)
 unsigned char *
 read_client_message(int user_index)
 {
-	struct user_server_buffering_st *buffer = &users[user_index].server_data.buffer;
+	struct user_server_buffering_st *buffer = &g_users[user_index].server_data.buffer;
 
 	if (buffer->proc_position >= buffer->recv_position) {
 		buffer->recv_position = 0;
@@ -153,13 +153,13 @@ read_client_message(int user_index)
 bool
 add_client_message(unsigned char *message, size_t size, int user_index)
 {
-	if (users[user_index].server_data.socket_fd < 3)
+	if (g_users[user_index].server_data.socket_fd < 3)
 		return false;
 
 	if (message == NULL)
 		return false;
 
-	struct user_server_buffering_st *buffer = &users[user_index].server_data.buffer;
+	struct user_server_buffering_st *buffer = &g_users[user_index].server_data.buffer;
 
 	struct packet_header *header = (struct packet_header *)message;
 
@@ -241,10 +241,10 @@ add_client_message(unsigned char *message, size_t size, int user_index)
 bool
 receive(int user_index)
 {
-	struct user_server_buffering_st *buffer = &users[user_index].server_data.buffer;
+	struct user_server_buffering_st *buffer = &g_users[user_index].server_data.buffer;
 
 	int rest = RECV_BUFFER_SIZE - buffer->recv_position;
-	int received_bytes = recv(users[user_index].server_data.socket_fd, (unsigned char*)(buffer->recv_buffer + buffer->recv_position), rest, 0);
+	int received_bytes = recv(g_users[user_index].server_data.socket_fd, (unsigned char*)(buffer->recv_buffer + buffer->recv_position), rest, 0);
 
 	if (received_bytes < 0) {
 		perror("recv");
@@ -260,7 +260,7 @@ receive(int user_index)
 	if (received_bytes == rest) {
 		refresh_recv_buffer(user_index);
 		rest = RECV_BUFFER_SIZE - buffer->recv_position;
-		received_bytes = recv(users[user_index].server_data.socket_fd, (unsigned char*)(buffer->recv_buffer + buffer->recv_position), rest, 0);
+		received_bytes = recv(g_users[user_index].server_data.socket_fd, (unsigned char*)(buffer->recv_buffer + buffer->recv_position), rest, 0);
 		buffer->recv_position += received_bytes;
 	}
 
@@ -270,7 +270,7 @@ receive(int user_index)
 bool
 send_one_message(unsigned char* message, size_t size, int user_index)
 {
-	if (users[user_index].server_data.socket_fd < 3)
+	if (g_users[user_index].server_data.socket_fd < 3)
 		return false;
 
 	bool message_added = add_client_message(message, size, user_index);
@@ -282,15 +282,15 @@ send_one_message(unsigned char* message, size_t size, int user_index)
 bool
 send_all_messages(int user_index)
 {
-	if (users[user_index].server_data.socket_fd < 3)
+	if (g_users[user_index].server_data.socket_fd < 3)
 		return false;
 
-	struct user_server_buffering_st *buffer = &users[user_index].server_data.buffer;
+	struct user_server_buffering_st *buffer = &g_users[user_index].server_data.buffer;
 
 	if (buffer->sent_position > 0)
 		refresh_send_buffer(user_index);
 
-	if (buffer->send_position > SEND_BUFFER_SIZE || buffer->send_position < 0 || users[user_index].server_data.socket_fd < 3) {
+	if (buffer->send_position > SEND_BUFFER_SIZE || buffer->send_position < 0 || g_users[user_index].server_data.socket_fd < 3) {
 		buffer->send_position = 0;
 		buffer->sent_position = 0;
 		return false;
@@ -306,10 +306,10 @@ send_all_messages(int user_index)
 
 	// FLUSHING
 	int flag = 1;
-	setsockopt(users[user_index].server_data.socket_fd, IPPROTO_TCP, TCP_NODELAY, (char *) &flag, sizeof(int));
-	int sent_bytes = send(users[user_index].server_data.socket_fd, buffer->send_buffer + buffer->sent_position, left, 0);
+	setsockopt(g_users[user_index].server_data.socket_fd, IPPROTO_TCP, TCP_NODELAY, (char *) &flag, sizeof(int));
+	int sent_bytes = send(g_users[user_index].server_data.socket_fd, buffer->send_buffer + buffer->sent_position, left, 0);
 	flag = 0;
-	setsockopt(users[user_index].server_data.socket_fd, IPPROTO_TCP, TCP_NODELAY, (char *) &flag, sizeof(int));
+	setsockopt(g_users[user_index].server_data.socket_fd, IPPROTO_TCP, TCP_NODELAY, (char *) &flag, sizeof(int));
 
 	printf("sent_bytes: %d\n", sent_bytes);
 

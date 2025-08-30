@@ -20,14 +20,14 @@
 bool
 request_logout_char(int user_index)
 {
-	struct user_server_st *user = &users[user_index];
+	struct user_server_st *user = &g_users[user_index];
 
 	if (user->server_data.mode >= USER_SELCHAR)
 		save_client(user_index);
 
 	if (user->server_data.mode >= USER_PLAY) {
 		
-		struct mob_server_st *mob = &mobs[user_index];
+		struct mob_server_st *mob = &g_mobs[user_index];
 
 		for (size_t i = 0; i < MAX_PARTY; i++) {
 			size_t baby_mob_index = mob->baby_mob[i];
@@ -40,7 +40,7 @@ request_logout_char(int user_index)
 				continue;
 			}
 
-			struct mob_server_st *baby_mob = &mobs[baby_mob_index];
+			struct mob_server_st *baby_mob = &g_mobs[baby_mob_index];
 	
 			if (!is_summon(*baby_mob)){
 				mob->baby_mob[i] = 0;
@@ -75,13 +75,11 @@ request_return_char_list(int user_index) {
 bool
 request_command(struct packet_request_command *request_command, int user_index)
 {
-	struct mob_server_st *mob = &mobs[user_index];
+	struct mob_server_st *mob = &g_mobs[user_index];
 	
 	char tmp[100];
 	request_command->e_value[99] = '\0';
 	request_command->e_command[15] = '\0';
-
-	printf("COMMAND: %s | VALUE: %s\n", request_command->e_command, request_command->e_value);
 
 	if (strcmp(request_command->e_command, "day") == 0) {
 		time_t nowraw;
@@ -189,14 +187,14 @@ request_command(struct packet_request_command *request_command, int user_index)
 					return true;
 				}
 
-				struct party_st *party = &parties[mob->party_index];
+				struct party_st *party = &g_parties[mob->party_index];
 				strncpy(request_command->e_command, mob->mob.name, 16);
 
 				for (size_t i = 0; i < MAX_PARTY; i++) {
 					if (party->players[i] == -1 || party->players[i] == user_index)
 						continue;
 
-					struct mob_server_st *party_mob = &mobs[party->players[i]];
+					struct mob_server_st *party_mob = &g_mobs[party->players[i]];
 					if (party_mob->in_party)
 						send_one_message((unsigned char *) request_command, xlen(request_command), party->players[i]);
 				}
@@ -213,10 +211,10 @@ request_command(struct packet_request_command *request_command, int user_index)
 				if (sscanf(request_command->e_value, "%100[^\n]", msg)) {
 					int recruit_id = -1;
 					for (size_t i = 1; i <= MAX_USERS_PER_CHANNEL; i++) {
-						if (users[i].server_data.mode != USER_PLAY)
+						if (g_users[i].server_data.mode != USER_PLAY)
 							continue;
 
-						struct mob_server_st *recruit_mob = &mobs[i];
+						struct mob_server_st *recruit_mob = &g_mobs[i];
 
 						if (strcmp(recruit_mob->mob.name, name) == 0) {
 							recruit_id = i;
@@ -250,7 +248,7 @@ request_movement(struct packet_request_action *request_action, int user_index)
 	if (destination.X >= 4096 || destination.Y >= 4096)
 		return false;
 
-	struct mob_server_st *mob = &mobs[user_index];
+	struct mob_server_st *mob = &g_mobs[user_index];
 
 	mob->mob.dest = destination;
 	
@@ -293,7 +291,7 @@ request_movement(struct packet_request_action *request_action, int user_index)
 	}
 
 	for (size_t i = 0; i < MAX_GUILD_ZONE; i++) {
-		struct guildzone_st *zone = &guild_zone[i];
+		struct guildzone_st *zone = &g_guild_zone[i];
 		if (destination.X >= zone->area_guild_min_x && destination.X <= zone->area_guild_max_x && destination.Y >= zone->area_guild_min_y && destination.Y <= zone->area_guild_max_y) {
 			get_guild_zone(*mob, &destination.X, &destination.Y);
 			send_teleport(user_index, destination);

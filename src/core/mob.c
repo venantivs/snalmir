@@ -44,7 +44,7 @@ load_base_char_mobs()
       fatal_error(error);
     }
 
-    fread(&base_char_mobs[i], sizeof(struct mob_st), 1, user_mob);
+    fread(&g_base_char_mobs[i], sizeof(struct mob_st), 1, user_mob);
     fclose(user_mob);
   }
 }
@@ -62,7 +62,7 @@ create_mob(const char* name, int user_index)
   if (user_mob == NULL)
     return;
 
-  struct account_file_st *account_file = &users_db[user_index];
+  struct account_file_st *account_file = &g_users_db[user_index];
   unsigned char_index = account_file->profile.sel_char;
 
   fwrite(&account_file->mob_account[char_index], sizeof(struct mob_st), 1, user_mob);
@@ -76,7 +76,7 @@ load_mob(int char_index, int user_index)
   FILE *user_mob = NULL;
   char file_path[1024] = { 0 };
 
-  struct account_file_st *account_file = &users_db[user_index];
+  struct account_file_st *account_file = &g_users_db[user_index];
   const char *nickname = account_file->profile.mob_name[char_index];
 
   // CHECAR O QUE EXATAMENTE FAZ
@@ -106,7 +106,7 @@ save_mob(int char_index, bool delete_mob, int user_index)
   FILE *user_mob = NULL;
   char file_path[1024] = { 0 };
 
-  struct account_file_st *account_file = &users_db[user_index];
+  struct account_file_st *account_file = &g_users_db[user_index];
   struct mob_st *mob = &account_file->mob_account[char_index];
   const char *name = account_file->profile.mob_name[char_index];
 
@@ -255,15 +255,15 @@ refresh_enemy(struct mob_server_st *mob)
 
 	for (size_t i = 0; i < MAX_ENEMY; ++i) {
 		if (mob->enemy_list[i] > 0) {
-			if ((is_summon(*mob) && (mob->enemy_list[i] < MAX_USERS_PER_CHANNEL)) || (is_summon(*mob) && is_summon(mobs[mob->enemy_list[i]]))) {
+			if ((is_summon(*mob) && (mob->enemy_list[i] < MAX_USERS_PER_CHANNEL)) || (is_summon(*mob) && is_summon(g_mobs[mob->enemy_list[i]]))) {
 				if (check_pvp_area(mob->enemy_list[i]) == 0) remove_enemy_list(mob, mob->enemy_list[i]);
 				else if (check_pvp_area(mob->mob.client_index) == 0) remove_enemy_list(mob, mob->enemy_list[i]);
 			}
-			else if (is_dead(mobs[mob->enemy_list[i]]))
+			else if (is_dead(g_mobs[mob->enemy_list[i]]))
 				remove_enemy_list(mob, mob->enemy_list[i]);
 			else if (is_summon(*mob) && mob->enemy_list[i] == mob->summoner)
 				remove_enemy_list(mob, mob->enemy_list[i]);
-			else if (get_distance(mob->mob.current, mobs[mob->enemy_list[i]].mob.current) > 7)
+			else if (get_distance(mob->mob.current, g_mobs[mob->enemy_list[i]].mob.current) > 7)
 				remove_enemy_list(mob, mob->enemy_list[i]);
 			else
 				mob->enemy_count++;
@@ -297,13 +297,13 @@ select_target_from_enemy_list(struct mob_server_st *mob)
     else {
       for (int x = 0; x < MAX_ENEMY; x++) {
         if (mob->enemy_list[x] == mob->max_damage) {
-          if (is_dead(mobs[mob->max_damage])) {
+          if (is_dead(g_mobs[mob->max_damage])) {
             remove_enemy_list(mob, mob->max_damage);
             break;
-          } else if (mob->max_damage > BASE_MOB && !is_summon(mobs[mob->max_damage]) && !is_summon(*mob)) {
+          } else if (mob->max_damage > BASE_MOB && !is_summon(g_mobs[mob->max_damage]) && !is_summon(*mob)) {
             remove_enemy_list(mob, mob->max_damage);
             break;
-          } else if (get_distance(mob->mob.current, mobs[mob->max_damage].mob.current) > 7) {
+          } else if (get_distance(mob->mob.current, g_mobs[mob->max_damage].mob.current) > 7) {
             remove_enemy_list(mob, mob->max_damage);
             break;
           } else {
@@ -322,13 +322,13 @@ select_target_from_enemy_list(struct mob_server_st *mob)
     else {
       for (int x = 0; x < MAX_ENEMY; x++) {
         if (mob->enemy_list[x] == mob->low_hp) {
-          if (is_dead(mobs[mob->low_hp])) {
+          if (is_dead(g_mobs[mob->low_hp])) {
             remove_enemy_list(mob, mob->low_hp);
             break;
-          } else if (mob->low_hp > BASE_MOB && !is_summon(mobs[mob->low_hp]) && !is_summon(*mob)) {
+          } else if (mob->low_hp > BASE_MOB && !is_summon(g_mobs[mob->low_hp]) && !is_summon(*mob)) {
             remove_enemy_list(mob, mob->low_hp);
             break;
-          } else if (get_distance(mob->mob.current, mobs[mob->low_hp].mob.current) > 7) {
+          } else if (get_distance(mob->mob.current, g_mobs[mob->low_hp].mob.current) > 7) {
             remove_enemy_list(mob, mob->low_hp);
             break;
           } else {
@@ -347,13 +347,13 @@ select_target_from_enemy_list(struct mob_server_st *mob)
     else {
       for (int x = 0; x < MAX_ENEMY; x++) {
         if (mob->enemy_list[x] == mob->low_defense) {
-          if (is_dead(mobs[mob->low_defense])) {
+          if (is_dead(g_mobs[mob->low_defense])) {
             remove_enemy_list(mob, mob->low_defense);
             break;
-          } else if (mob->low_defense > BASE_MOB && !is_summon(mobs[mob->low_defense]) && !is_summon(*mob)) {
+          } else if (mob->low_defense > BASE_MOB && !is_summon(g_mobs[mob->low_defense]) && !is_summon(*mob)) {
             remove_enemy_list(mob, mob->low_defense);
             break;
-          } else if (get_distance(mob->mob.current, mobs[mob->low_defense].mob.current) > 7) {
+          } else if (get_distance(mob->mob.current, g_mobs[mob->low_defense].mob.current) > 7) {
             remove_enemy_list(mob, mob->low_defense);
             break;
           } else {
@@ -372,13 +372,13 @@ select_target_from_enemy_list(struct mob_server_st *mob)
     else {
       for (int x = 0; x < MAX_ENEMY; x++) {
         if (mob->enemy_list[x] == mob->low_level) {
-          if (is_dead(mobs[mob->low_level])) {
+          if (is_dead(g_mobs[mob->low_level])) {
             remove_enemy_list(mob, mob->low_level);
             continue;
-          } else if (mob->low_level > BASE_MOB && ! is_summon(mobs[mob->low_level]) && !is_summon(*mob)) {
+          } else if (mob->low_level > BASE_MOB && ! is_summon(g_mobs[mob->low_level]) && !is_summon(*mob)) {
             remove_enemy_list(mob, mob->low_level);
             continue;
-          } else if (get_distance(mob->mob.current, mobs[mob->low_level].mob.current) > 7) {
+          } else if (get_distance(mob->mob.current, g_mobs[mob->low_level].mob.current) > 7) {
             remove_enemy_list(mob, mob->low_level);
             continue;
           } else {
@@ -394,13 +394,13 @@ select_target_from_enemy_list(struct mob_server_st *mob)
 
 	for (int i = 0; i < MAX_ENEMY; i++) {
 		if (mob->enemy_list[i] > 0) {
-			if (is_dead(mobs[mob->enemy_list[i]])) {
+			if (is_dead(g_mobs[mob->enemy_list[i]])) {
         remove_enemy_list(mob, mob->enemy_list[i]);
         continue;
-      } else if (mob->enemy_list[i] > BASE_MOB && !is_summon(mobs[mob->enemy_list[i]]) && !is_summon(*mob)) {
+      } else if (mob->enemy_list[i] > BASE_MOB && !is_summon(g_mobs[mob->enemy_list[i]]) && !is_summon(*mob)) {
         remove_enemy_list(mob, mob->enemy_list[i]);
         continue;
-      } else if (get_distance(mob->mob.current, mobs[mob->enemy_list[i]].mob.current) > 7) {
+      } else if (get_distance(mob->mob.current, g_mobs[mob->enemy_list[i]].mob.current) > 7) {
         remove_enemy_list(mob, mob->enemy_list[i]);
         continue;
       } else {
@@ -443,22 +443,22 @@ get_enemy_from_view(struct mob_server_st *mob)
 
 	for (int nY = minPosY; nY < maxPosY; nY++) {
 		for (int nX = minPosX; nX < maxPosX; nX++) {
-			short mob_id = mob_grid[nY][nX];
+			short mob_id = g_mob_grid[nY][nX];
 
 			if (mob_id <= 0)
         continue;
 
 			if (mob_id > BASE_MOB) {
-				if (!is_summon(mobs[mob_id]))
+				if (!is_summon(g_mobs[mob_id]))
 					continue;
-				else if(mobs[mob_id].mob_type != MOB_TYPE_GUARD) 
+				else if(g_mobs[mob_id].mob_type != MOB_TYPE_GUARD) 
 					continue;
 			}
 
-			if (is_dead(mobs[mob_id]))
+			if (is_dead(g_mobs[mob_id]))
         continue;
 
-			if (get_distance(mob->mob.current, mobs[mob_id].mob.current) > 3)
+			if (get_distance(mob->mob.current, g_mobs[mob_id].mob.current) > 3)
         continue;
 
 			add_enemy_list(mob, mob_id);
@@ -499,13 +499,13 @@ get_enemy_from_view_by_mob_type(struct mob_server_st *mob, int mob_type)
 
 	for (int nY = minPosY; nY < maxPosY; nY++) {
 		for (int nX = minPosX; nX < maxPosX; nX++) {
-			short mob_id = mob_grid[nY][nX];
+			short mob_id = g_mob_grid[nY][nX];
 
       if (mob_id <= 0)
         continue;
 
       if (mob_id > BASE_MOB) {
-				if (mobs[mob_id].mob_type == mob_type) {
+				if (g_mobs[mob_id].mob_type == mob_type) {
 					add_enemy_list(mob, mob_id);
 					return true;
 				}
@@ -609,7 +609,7 @@ standby_processor(struct mob_server_st *mob)
 
 	if (mob->mob_type != MOB_TYPE_NPC && mob->mob_type != MOB_TYPE_SUMMON) {
 		if (mob->current_target != 0) {
-			if (is_dead(mobs[mob->current_target])) {
+			if (is_dead(g_mobs[mob->current_target])) {
 				refresh_enemy(mob);
 
 				if (select_target_from_enemy_list(mob)) {
@@ -649,7 +649,7 @@ standby_processor(struct mob_server_st *mob)
 			}	
 		}
 
-		distance = get_distance(mob->mob.current, gener_list[mob->generate_index].start.position);
+		distance = get_distance(mob->mob.current, g_gener_list[mob->generate_index].start.position);
 
 		if (mob->next >= 13 || distance > 5) {
 			ret_action = ACTION_MOVE_RAND;
@@ -667,7 +667,7 @@ standby_processor(struct mob_server_st *mob)
 		break;
 
 	case MOB_TYPE_NPC:
-		distance = get_distance(mob->mob.current, gener_list[mob->generate_index].start.position);
+		distance = get_distance(mob->mob.current, g_gener_list[mob->generate_index].start.position);
 		
 		if (mob->next >= 13 || distance > 5) {
 			ret_action = ACTION_MOVE_RAND;
@@ -698,7 +698,7 @@ standby_processor(struct mob_server_st *mob)
 			}
 		}
 
-		distance = get_distance(mob->mob.current, gener_list[mob->generate_index].start.position);
+		distance = get_distance(mob->mob.current, g_gener_list[mob->generate_index].start.position);
 
 		if (mob->next >= 13 || distance > 5) {
 			ret_action = ACTION_MOVE_RAND;
@@ -722,7 +722,7 @@ standby_processor(struct mob_server_st *mob)
 			return NO_MORE_ACTION;
 		}
 
-    distance = get_distance(mob->mob.current, gener_list[mob->summoner].start.position);
+    distance = get_distance(mob->mob.current, g_gener_list[mob->summoner].start.position);
 
 		if (distance > 14) {
 			ret_action = ACTION_MOVE_TO_SUMMONER;
@@ -731,7 +731,7 @@ standby_processor(struct mob_server_st *mob)
 			break;
 		} else {
 			if (mob->current_target != 0) {
-				if (is_dead(mobs[mob->current_target])) {
+				if (is_dead(g_mobs[mob->current_target])) {
 					refresh_enemy(mob);
 					if (select_target_from_enemy_list(mob)) {
 						ret_action = ACTION_BATTLE;
@@ -802,7 +802,7 @@ standby_processor(struct mob_server_st *mob)
 			}
 		}
 
-		distance = get_distance(mob->mob.current, gener_list[mob->generate_index].start.position);
+		distance = get_distance(mob->mob.current, g_gener_list[mob->generate_index].start.position);
 
 		if (mob->next >= 13 || distance > 5) {
 			ret_action = ACTION_MOVE_RAND;
@@ -832,7 +832,7 @@ standby_processor(struct mob_server_st *mob)
 			}
 		}
 
-		distance = get_distance(mob->mob.current, gener_list[mob->generate_index].start.position);
+		distance = get_distance(mob->mob.current, g_gener_list[mob->generate_index].start.position);
 
 		if (mob->next >= 13 || distance > 5) {
 			ret_action = ACTION_MOVE_RAND;
@@ -862,7 +862,7 @@ battle_processor(struct mob_server_st *mob)
 			return 0;
 		}
 
-		struct mob_server_st *summoner_mob = &mobs[mob->summoner];
+		struct mob_server_st *summoner_mob = &g_mobs[mob->summoner];
 		bool valid = false;
 		for (size_t i = 0; i < MAX_PARTY; i++) {
 			if (summoner_mob->baby_mob[i] == mob->mob.client_index) {
@@ -895,18 +895,18 @@ battle_processor(struct mob_server_st *mob)
 			return NO_MORE_ACTION;
 		}
 	} else {
-		double distance = get_distance(mob->mob.current, mobs[mob->current_target].mob.current);
+		double distance = get_distance(mob->mob.current, g_mobs[mob->current_target].mob.current);
 		if (distance > 2 && distance < 6) {
-			short newPosX = mobs[mob->current_target].mob.current.X;
-			short newPosY = mobs[mob->current_target].mob.current.Y;
+			short newPosX = g_mobs[mob->current_target].mob.current.X;
+			short newPosY = g_mobs[mob->current_target].mob.current.Y;
 			movement(mob, newPosX, newPosY, MOVE_NORMAL);
 			return NO_MORE_ACTION;
 		}
 
-		double distance_2 = get_distance(mob->mob.current, mobs[mob->current_target].mob.current);
+		double distance_2 = get_distance(mob->mob.current, g_mobs[mob->current_target].mob.current);
 		if (distance_2 <= 2) {
 			send_attack(mob->mob.client_index, mob->current_target);
-			add_enemy_list(&mobs[mob->current_target], mob->mob.client_index);
+			add_enemy_list(&g_mobs[mob->current_target], mob->mob.client_index);
 			return NO_MORE_ACTION;
 		}
 	}
@@ -1017,7 +1017,7 @@ level_up(struct mob_server_st *mob)
 void 
 mob_drop(struct mob_server_st *user, int mob_index)
 {
-	struct mob_server_st *mob = &mobs[mob_index];
+	struct mob_server_st *mob = &g_mobs[mob_index];
 	if (strcmp(mob->mob.name, "Runas") == 0) {
 		int rune_id = ((rand() % 23) + 5110);
 		int prob_drop = (rand() % 100);

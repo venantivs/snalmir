@@ -25,7 +25,7 @@ send_grid_mob(int index)
   if (index <= 0 || index >= MAX_SPAWN_LIST)
     return;
 
-  struct mob_st *npc_mob = &mobs[index].mob;
+  struct mob_st *npc_mob = &g_mobs[index].mob;
 
   short posX = npc_mob->current.X, posY = npc_mob->current.Y;
 
@@ -54,8 +54,8 @@ send_grid_mob(int index)
 
   for (int y = min_position_y; y < max_position_y; y++) {
     for (int x = min_position_x; x < max_position_x; x++) {
-      short mob_id = mob_grid[y][x];
-      short item_id = item_grid[y][x];
+      short mob_id = g_mob_grid[y][x];
+      short item_id = g_item_grid[y][x];
 
       if (x > min_position_x || x <= max_position_x || y > min_position_y || y <= max_position_y)  {
         if (item_id > 0 && index <= MAX_USERS_PER_CHANNEL)
@@ -80,8 +80,8 @@ send_grid_item(int index, void *packet)
   if (index <= 0 || index >= MAX_INIT_ITEM_LIST)
     return;
 
-  short posX = ground_items[index].position.X,
-    posY = ground_items[index].position.Y;
+  short posX = g_ground_items[index].position.X,
+    posY = g_ground_items[index].position.Y;
 
   int VisX = VIEW_GRIDX, VisY = VIEW_GRIDY,
     minPosX = (posX - HALF_GRIDX),
@@ -108,7 +108,7 @@ send_grid_item(int index, void *packet)
 
   for (int nY = minPosY; nY < maxPosY; nY++) {
     for (int nX = minPosX; nX < maxPosX; nX++) {
-      short mob_id = mob_grid[nY][nX];
+      short mob_id = g_mob_grid[nY][nX];
       if (mob_id <= 0)
         continue;
 
@@ -121,7 +121,7 @@ send_grid_item(int index, void *packet)
 void
 send_create_mob(int send_index, int create_index)
 {
-  if (create_index <= MAX_USERS_PER_CHANNEL && mobs[create_index].mode == MOB_MARKET) {
+  if (create_index <= MAX_USERS_PER_CHANNEL && g_mobs[create_index].mode == MOB_MARKET) {
     // CREATES A MARKET MOB, TODO: Implement 
   } else {
 		get_create_mob(create_index, send_index);
@@ -139,15 +139,15 @@ send_score(short index)
 	refresh_score.header.operation_code = 0x336;
 	refresh_score.header.index = index;
 
-  struct mob_server_st user = mobs[index];
+  struct mob_server_st user = g_mobs[index];
 
 	if (index < MAX_USERS_PER_CHANNEL) {
 		refresh_score.current_hp = user.mob.status.current_hp;
 		refresh_score.current_mp = user.mob.status.current_mp;
 	}
 
-	refresh_score.critical = mobs[index].mob.critical;
-	refresh_score.save_mana = mobs[index].mob.save_mana;
+	refresh_score.critical = g_mobs[index].mob.critical;
+	refresh_score.save_mana = g_mobs[index].mob.save_mana;
 
 	if (user.guild_disable == 0) {
 		refresh_score.guild_index = user.mob.guild_id;
@@ -183,7 +183,7 @@ send_etc(short index)
 	if (index <= 0 || index >= MAX_USERS_PER_CHANNEL)
 		return;
 
-  struct mob_st mob = mobs[index].mob;
+  struct mob_st mob = g_mobs[index].mob;
 
 	struct packet_refresh_etc refresh_etc;
 	refresh_etc.header.size = sizeof(struct packet_refresh_etc);
@@ -207,7 +207,7 @@ send_affects(int index)
 	if (index > MAX_USERS_PER_CHANNEL)
 		return;
 
-  struct mob_st user = mobs[index].mob;
+  struct mob_st user = g_mobs[index].mob;
 
   struct packet_affect send_affect;
 	send_affect.header.operation_code = 0x3B9;
@@ -247,7 +247,7 @@ send_emotion(int index, int effect_type, int effect_value)
 	emotion.effect_value = effect_value;
 	emotion.unknown = 0;
 
-  struct mob_st user = mobs[index].mob;
+  struct mob_st user = g_mobs[index].mob;
 
 	send_grid_multicast(user.current.X, user.current.Y, &emotion, 0);
 }
@@ -281,7 +281,7 @@ send_grid_multicast(short position_x, short position_y, void *packet, int index)
 
 	for (int nY = minPosY; nY < maxPosY; nY++) {
 		for (int nX = minPosX; nX < maxPosX; nX++) {
-			short mob_id = mob_grid[nY][nX];
+			short mob_id = g_mob_grid[nY][nX];
 
 			if (mob_id <= 0 || index == mob_id)
 				continue;
@@ -300,7 +300,7 @@ send_grid_multicast_with_packet(int mob_index, short position_x, short position_
 	if (mob_index <= 0 || mob_index >= MAX_SPAWN_LIST)
 		return;
 
-	struct mob_st *mob = &mobs[mob_index].mob;
+	struct mob_st *mob = &g_mobs[mob_index].mob;
 
 	int VisX = VIEW_GRIDX, VisY = VIEW_GRIDY,
 		minPosX = (mob->current.X - HALF_GRIDX),
@@ -350,7 +350,7 @@ send_grid_multicast_with_packet(int mob_index, short position_x, short position_
 
 	for (int nY = minPosY; nY < maxPosY; nY++) {
 		for (int nX = minPosX; nX < maxPosX; nX++) {
-			int mob_id = mob_grid[nY][nX];
+			int mob_id = g_mob_grid[nY][nX];
 			
 			if (mob_id <= 0 || mob_index == mob_id)
 				continue;
@@ -387,8 +387,8 @@ send_grid_multicast_with_packet(int mob_index, short position_x, short position_
 
 	for (int nY = dminPosY; nY < dmaxPosY; nY++) {
 		for (int nX = dminPosX; nX < dmaxPosX; nX++) {
-			short init_id = item_grid[nY][nX];
-			short mob_id = mob_grid[nY][nX];
+			short init_id = g_item_grid[nY][nX];
+			short mob_id = g_mob_grid[nY][nX];
 
 			if (nX < minPosX || nX >= maxPosX || nY < minPosY || nY >= maxPosY) {
 				if (mob_id > 0 && mob_index != mob_id) {
@@ -406,7 +406,7 @@ send_grid_multicast_with_packet(int mob_index, short position_x, short position_
 					if (mob_index <= MAX_USERS_PER_CHANNEL) {
 						get_create_item(init_id);
 
-						struct ground_item_st init = ground_items[init_id];
+						struct ground_item_st init = g_ground_items[init_id];
 
 						if (init.status == 1 || init.status == 4) {
 
@@ -445,13 +445,13 @@ send_remove_mob(int mob_index, int to_remove_index, int delete_type)
 	remove_mob_signal.header.operation_code = 0x165;
 	remove_mob_signal.data = delete_type;
 
-	send_grid_multicast_with_packet(0, mobs[mob_index].mob.current.X, mobs[mob_index].mob.current.Y, (unsigned char*) &remove_mob_signal);
+	send_grid_multicast_with_packet(0, g_mobs[mob_index].mob.current.X, g_mobs[mob_index].mob.current.Y, (unsigned char*) &remove_mob_signal);
 }
 
 void
 send_teleport(int mob_index, struct position_st destination)
 {
-	struct mob_st *mob = &mobs[mob_index].mob;
+	struct mob_st *mob = &g_mobs[mob_index].mob;
 
 	if (mob->current.X == destination.X && mob->current.Y == destination.Y)
 		return;
@@ -494,8 +494,8 @@ get_damage(short damage, short defense, unsigned char master)
 void
 send_party_experience(short mob_index, short killed_index)
 {
-	struct mob_server_st *mob = &mobs[mob_index];
-	struct party_st *party = &parties[mob->party_index];
+	struct mob_server_st *mob = &g_mobs[mob_index];
+	struct party_st *party = &g_parties[mob->party_index];
 
 	for (size_t x = 0; x < MAX_PARTY; x++) {
 		int k = party->players[x];
@@ -506,10 +506,10 @@ send_party_experience(short mob_index, short killed_index)
 		if (k == mob_index)
 			continue;
 		
-		struct mob_server_st *tar = &mobs[k];
+		struct mob_server_st *tar = &g_mobs[k];
 		int distance = get_distance(mob->mob.current, tar->mob.current);
 		if (distance < 8) {
-			int class_experience = ((get_exp_by_kill(mobs[killed_index].mob.experience, k, killed_index) * 70) / 100);
+			int class_experience = ((get_exp_by_kill(g_mobs[killed_index].mob.experience, k, killed_index) * 70) / 100);
 			tar->mob.experience += class_experience;
 
 			struct packet_dead_mob dead_mob;
@@ -536,8 +536,8 @@ send_party_experience(short mob_index, short killed_index)
 bool
 process_chaos_points(int killer_index, int killed_index)
 {
-	struct mob_st *killer = &mobs[killer_index].mob;
-	struct mob_st *killed = &mobs[killer_index].mob;
+	struct mob_st *killer = &g_mobs[killer_index].mob;
+	struct mob_st *killed = &g_mobs[killer_index].mob;
 
 	if (killer_index <= 0 || killer_index >= MAX_USERS_PER_CHANNEL)
 		return false;
@@ -574,10 +574,10 @@ send_env_effect(struct position_st min, struct position_st max, short effect_id,
 	send_effect.time = 0;
 
 	for (size_t i = 1; i <= MAX_USERS_PER_CHANNEL; i++) {
-		if (users[i].server_data.mode != USER_PLAY)
+		if (g_users[i].server_data.mode != USER_PLAY)
 			continue;
 
-		if ((mobs[i].mob.current.X >= min.X && mobs[i].mob.current.X <= max.X) && (mobs[i].mob.current.Y >= min.Y && mobs[i].mob.current.Y <= max.Y)) {
+		if ((g_mobs[i].mob.current.X >= min.X && g_mobs[i].mob.current.X <= max.X) && (g_mobs[i].mob.current.Y >= min.Y && g_mobs[i].mob.current.Y <= max.Y)) {
 			send_one_message((unsigned char*) &send_effect, xlen(&send_effect), i);
 		}
 	}
@@ -587,7 +587,7 @@ void
 send_mob_dead(int killer_index, int killed_index)
 {
 	if (killed_index <= MAX_USERS_PER_CHANNEL && killer_index <= MAX_USERS_PER_CHANNEL) {
-		if (check_pvp_area(killer_index) >= 2 && !mobs[killer_index].in_duel) {
+		if (check_pvp_area(killer_index) >= 2 && !g_mobs[killer_index].in_duel) {
 			int minusCP = 1;
 			bool frag = process_chaos_points(killer_index, killed_index);
 			
@@ -607,7 +607,7 @@ send_mob_dead(int killer_index, int killed_index)
 				get_create_mob(killer_index, killer_index);
 				send_grid_mob(killer_index);
 			}
-		} else if (mobs[killer_index].in_duel && mobs[killed_index].in_duel) {
+		} else if (g_mobs[killer_index].in_duel && g_mobs[killed_index].in_duel) {
 			/*SendClientMessage(Killer, "Parabens, voce venceu o Duelo!!!");
 			SendClientMessage(Killed, "Que pena, voce perdeu o Duelo!!!");
 			DoTeleport(Killer, 2100, 2100);
@@ -618,8 +618,8 @@ send_mob_dead(int killer_index, int killed_index)
 			Event.Duelo.Time = -1;*/
 		}
 
-		mobs[killer_index].mob.last_position = mobs[killer_index].mob.current;
-		get_action(killer_index, mobs[killer_index].mob.current.X, mobs[killer_index].mob.current.Y, MOVE_NORMAL, NULL);
+		g_mobs[killer_index].mob.last_position = g_mobs[killer_index].mob.current;
+		get_action(killer_index, g_mobs[killer_index].mob.current.X, g_mobs[killer_index].mob.current.Y, MOVE_NORMAL, NULL);
 
 		return;
 	}
@@ -627,9 +627,9 @@ send_mob_dead(int killer_index, int killed_index)
 	if (killed_index <= MAX_USERS_PER_CHANNEL)
 		return;
 
-	struct mob_server_st *killer = &mobs[killer_index];
-	struct mob_server_st *killed = &mobs[killed_index];
-	struct npcgener_st *n = &gener_list[killed->generate_index];
+	struct mob_server_st *killer = &g_mobs[killer_index];
+	struct mob_server_st *killed = &g_mobs[killed_index];
+	struct npcgener_st *n = &g_gener_list[killed->generate_index];
 
 	if (killed->mob_type == MOB_TYPE_PESA_MOB || killed->mob_type == MOB_TYPE_PESA_BOSS) { //pesa mob dead
 		fprintf(stderr, "MOB PESA MORREU, DEU RUIM\n");
@@ -672,8 +672,8 @@ send_mob_dead(int killer_index, int killed_index)
 void
 send_attack(int attacker_index, int target_index)
 {
-	struct mob_server_st *attacker = &mobs[attacker_index];
-	struct mob_server_st *target = &mobs[target_index];
+	struct mob_server_st *attacker = &g_mobs[attacker_index];
+	struct mob_server_st *target = &g_mobs[target_index];
 	// CMob *Atk = &MainServer.pMob[Atacker];
 	// CMob *Def = &MainServer.pMob[Defender];
 	if (is_dead(*target))
@@ -722,7 +722,7 @@ send_attack(int attacker_index, int target_index)
 				continue;
 			}
 
-			struct mob_server_st *mob = &mobs[index];
+			struct mob_server_st *mob = &g_mobs[index];
 			if (!is_summon(*mob)) {
 				target->baby_mob[i] = 0;
 				continue;
@@ -794,7 +794,7 @@ CM_CONT:
 			} else {
 				if (is_summon(*target)) {
 					if (target->summoner > 0 && target->summoner <= MAX_USERS_PER_CHANNEL) {
-						struct mob_server_st *summoner = &mobs[target->summoner];
+						struct mob_server_st *summoner = &g_mobs[target->summoner];
 						for (int x = 0; x < MAX_PARTY; x++) {
 							if (summoner->baby_mob[x] == target_index) {
 								summoner->baby_mob[x] = 0;
@@ -842,13 +842,13 @@ CM_CONT:
 					if (attacker->summoner < 0 || attacker->summoner > MAX_USERS_PER_CHANNEL)
 						return;
 
-					if (users[attacker->summoner].server_data.mode != USER_PLAY)
+					if (g_users[attacker->summoner].server_data.mode != USER_PLAY)
 						return;
 
-					mobs[attacker->summoner].mob.experience += get_exp_by_kill(target->mob.experience, attacker->summoner, target_index);
+					g_mobs[attacker->summoner].mob.experience += get_exp_by_kill(target->mob.experience, attacker->summoner, target_index);
 					send_mob_dead(attacker->summoner, target_index);
 					send_affects(attacker->summoner);
-					level_up(&mobs[attacker->summoner]);
+					level_up(&g_mobs[attacker->summoner]);
 					send_all_messages(attacker->summoner);
 				}
 			}
