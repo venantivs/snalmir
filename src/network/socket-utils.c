@@ -92,7 +92,7 @@ refresh_send_buffer(int user_index)
  * Essa função precisa retornar erros pra fechar o socket lá fora.
  */
 unsigned char *
-read_client_message(int user_index)
+read_client_packet(int user_index)
 {
 	struct user_server_buffering_st *buffer = &g_users[user_index].server_data.buffer;
 
@@ -151,7 +151,7 @@ read_client_message(int user_index)
 }
 
 bool
-add_client_message(unsigned char *message, size_t size, int user_index)
+add_client_packet(unsigned char *message, size_t size, int user_index)
 {
 	if (g_users[user_index].server_data.socket_fd < 3)
 		return false;
@@ -231,7 +231,7 @@ add_client_message(unsigned char *message, size_t size, int user_index)
 	buffer->send_position += size;
 
 	if (buffer->queued_messages_count > 25) {
-		send_all_messages(user_index);
+		send_all_packets(user_index);
 		buffer->queued_messages_count = 0;
 	}
 
@@ -268,19 +268,19 @@ receive(int user_index)
 }
 
 bool
-send_one_message(unsigned char* message, size_t size, int user_index)
+send_one_packet(unsigned char* message, size_t size, int user_index)
 {
 	if (g_users[user_index].server_data.socket_fd < 3)
 		return false;
 
-	bool message_added = add_client_message(message, size, user_index);
-	message_added = send_all_messages(user_index);
+	bool message_added = add_client_packet(message, size, user_index);
+	message_added = send_all_packets(user_index);
 
 	return message_added;
 }
 
 bool
-send_all_messages(int user_index)
+send_all_packets(int user_index)
 {
 	if (g_users[user_index].server_data.socket_fd < 3)
 		return false;
@@ -330,7 +330,7 @@ send_all_messages(int user_index)
 }
 
 void
-send_client_string_message(const char* message, int user_index)
+send_client_message(const char* message, int user_index)
 {
 	struct packet_string_message string_message;
 
@@ -338,7 +338,7 @@ send_client_string_message(const char* message, int user_index)
 	string_message.header.operation_code = 0x101;
 	strncpy(string_message.string_message, message, 96);
 
-	send_one_message((unsigned char*) &string_message, xlen(&string_message), user_index);
+	send_one_packet((unsigned char*) &string_message, xlen(&string_message), user_index);
 }
 
 void
@@ -350,5 +350,5 @@ send_signal(short operation_code, int user_index)
 	signal.header.size = sizeof(struct packet_signal);
 	signal.header.operation_code = operation_code;
 
-	send_one_message((unsigned char*) &signal, xlen(&signal), user_index);
+	send_one_packet((unsigned char*) &signal, xlen(&signal), user_index);
 }

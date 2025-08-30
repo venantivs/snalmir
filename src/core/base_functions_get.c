@@ -212,7 +212,7 @@ get_action(int mob_index, short posX, short posY, int type, char *command)
 
 	if (command != NULL || type == MOVE_TELEPORT) {
 		if (mob_index <= MAX_USERS_PER_CHANNEL)
-			send_one_message((unsigned char*) &request_action, sizeof(struct packet_request_action), mob_index);
+			send_one_packet((unsigned char*) &request_action, sizeof(struct packet_request_action), mob_index);
 	}
 }
 
@@ -377,7 +377,7 @@ get_create_mob(int create_index, int send_index)
 		}
 	}
 
-	send_one_message((unsigned char*) &spawn_info, xlen(&spawn_info), send_index);
+	send_one_packet((unsigned char*) &spawn_info, xlen(&spawn_info), send_index);
 }
 
 void
@@ -1726,14 +1726,14 @@ get_exp_by_kill(unsigned int exp, int attacker_index, int target_index)
 			attacker->status.level = 39;
 			attacker->experience = 780000000;
 			exp = 0;
-			send_client_string_message("Desbloqueie o level 40 para continuar upando.", attacker_index);
+			send_client_message("Desbloqueie o level 40 para continuar upando.", attacker_index);
 			return exp;
 		} else if (attacker->status.level >= 89 && attacker->quest_info <= 1) {
 			attacker->quest_info = 1;
 			attacker->status.level = 89;
 			attacker->experience = 1780000000;
 			exp = 0;
-			send_client_string_message("Desbloqueie o level 90 para continuar upando.", attacker_index);
+			send_client_message("Desbloqueie o level 90 para continuar upando.", attacker_index);
 			return exp;
 		}
 	} else { //Mortal e Arch
@@ -1752,7 +1752,7 @@ get_exp_by_kill(unsigned int exp, int attacker_index, int target_index)
 				attacker->status.level = 354;
 				attacker->experience = 2039000000;
 				exp = 0;
-				send_client_string_message("Desbloquei o level 355 para continuar upando.", attacker_index);
+				send_client_message("Desbloquei o level 355 para continuar upando.", attacker_index);
 				return exp;
 			}
 		}

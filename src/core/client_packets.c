@@ -62,7 +62,7 @@ request_logout_char(int user_index)
 		clear_property(mob);
 	}
 
-	send_all_messages(user_index);
+	send_all_packets(user_index);
 
 	return true;
 }
@@ -93,7 +93,7 @@ request_command(struct packet_request_command *request_command, int user_index)
 		day = now->tm_mday;
 
 		sprintf(tmp, "!#%02d  %02d", day, mom);
-		send_client_string_message(tmp, user_index);
+		send_client_message(tmp, user_index);
 		return true;
 	} else if (strcmp(request_command->e_command, "nig") == 0) {
 		time_t nowraw;
@@ -108,7 +108,7 @@ request_command(struct packet_request_command *request_command, int user_index)
 		sec = now->tm_sec;
 
 		sprintf(tmp, "!!%02d%02d%02d", hour, min, sec);
-		send_client_string_message(tmp, user_index);
+		send_client_message(tmp, user_index);
 		return true;
 	} else if (strcmp(request_command->e_command, "eff") == 0) {
 		int eff, time;
@@ -121,7 +121,7 @@ request_command(struct packet_request_command *request_command, int user_index)
 		max.Y = mob->mob.current.Y + 3;
 
 		send_env_effect(min, max, eff, time);
-		send_client_string_message("eff", user_index);
+		send_client_message("eff", user_index);
 
 		return true;
 	} else if (strcmp(request_command->e_command, "time") == 0) {
@@ -129,7 +129,7 @@ request_command(struct packet_request_command *request_command, int user_index)
 		time_t rawnow = time(NULL);
 		struct tm *now = localtime(&rawnow);
 		sprintf(frase, "%02d/%02d/%02d - %02d:%02d:%02d", now->tm_mday, (now->tm_mon + 1), (now->tm_year - 100), now->tm_hour, now->tm_min, now->tm_sec);
-		send_client_string_message(frase, user_index);
+		send_client_message(frase, user_index);
 	} else if (strcmp(request_command->e_command, "create") == 0 || strcmp(request_command->e_command, "criar") == 0 || strcmp(request_command->e_command, "Criar") == 0 || strcmp(request_command->e_command, "Create") == 0) {
 		//CClientPackets::GuildCriar(Index, msg); // TODO: IMPLEMENTAR
 		return true;
@@ -144,7 +144,7 @@ request_command(struct packet_request_command *request_command, int user_index)
 		if (sscanf(request_command->e_value, "%26[^\n]", tab)) {
 			//CMob *p = &MainServer.pMob[Index];
 			if (mob->mob.b_status.level < 70) {
-				send_client_string_message("Level minimo: 70", user_index);
+				send_client_message("Level minimo: 70", user_index);
 				return true;
 			}
 			strncpy(mob->mob.tab, tab, 26);
@@ -174,16 +174,16 @@ request_command(struct packet_request_command *request_command, int user_index)
 			if (strncmp(request_command->e_value, "-", 1) == 0) { // Chat Guild
 				// CMob *a = &MainServer.pMob[Index];
 				if (mob->mob.guild_id == 0) {
-					send_client_string_message("Voce nao possui uma guild!", user_index);
+					send_client_message("Voce nao possui uma guild!", user_index);
 					return true;
 				}
 
-				send_client_string_message("Nao implementado", user_index);
+				send_client_message("Nao implementado", user_index);
 
 				return true;
 			} else if (strncmp(request_command->e_value, "=", 1) == 0) { // Chat Party
 				if (!mob->in_party) {
-					send_client_string_message("Voce nao possui um grupo!", user_index);
+					send_client_message("Voce nao possui um grupo!", user_index);
 					return true;
 				}
 
@@ -196,7 +196,7 @@ request_command(struct packet_request_command *request_command, int user_index)
 
 					struct mob_server_st *party_mob = &g_mobs[party->players[i]];
 					if (party_mob->in_party)
-						send_one_message((unsigned char *) request_command, xlen(request_command), party->players[i]);
+						send_one_packet((unsigned char *) request_command, xlen(request_command), party->players[i]);
 				}
 
 				return true;
@@ -204,7 +204,7 @@ request_command(struct packet_request_command *request_command, int user_index)
 		} else {
 			if (sscanf(request_command->e_command, "%16[^\n]", name)) {
 				if (strlen(name) < 4) {
-					send_client_string_message("Nome muito pequeno!", user_index);
+					send_client_message("Nome muito pequeno!", user_index);
 					return true;
 				}
 
@@ -223,13 +223,13 @@ request_command(struct packet_request_command *request_command, int user_index)
 					}
 
 					if (recruit_id == -1) {
-						send_client_string_message("Este jogador esta desconectado.", user_index);
+						send_client_message("Este jogador esta desconectado.", user_index);
 						return true;
 					}
 
 					strcpy(request_command->e_command, mob->mob.name);
 					request_command->header.index = recruit_id;
-					send_one_message((unsigned char *) request_command, xlen(request_command), recruit_id);
+					send_one_packet((unsigned char *) request_command, xlen(request_command), recruit_id);
 
 					return true;
 				}
@@ -276,7 +276,7 @@ request_movement(struct packet_request_action *request_action, int user_index)
 					send_score(user_index);
 					send_affects(user_index);
 
-					send_all_messages(user_index);					
+					send_all_packets(user_index);					
 				}
 			}
 		}
@@ -284,7 +284,7 @@ request_movement(struct packet_request_action *request_action, int user_index)
 
 	if ((destination.X >= 2057 && destination.X <= 2170) && (destination.Y >= 1931 && destination.Y <= 2054)) {
 		if (mob->mob.status.level > 38 || mob->mob.class_master > CLASS_MORTAL) {
-			send_client_string_message("Voce nao pode entrar nesta area!", user_index);
+			send_client_message("Voce nao pode entrar nesta area!", user_index);
 			send_teleport(user_index, (struct position_st) { 2100, 2100 });
 			return true;
 		}
@@ -295,7 +295,7 @@ request_movement(struct packet_request_action *request_action, int user_index)
 		if (destination.X >= zone->area_guild_min_x && destination.X <= zone->area_guild_max_x && destination.Y >= zone->area_guild_min_y && destination.Y <= zone->area_guild_max_y) {
 			get_guild_zone(*mob, &destination.X, &destination.Y);
 			send_teleport(user_index, destination);
-			send_client_string_message("Area pertencente a outra guilda.", user_index);
+			send_client_message("Area pertencente a outra guilda.", user_index);
 			return true;
 		}
 	}

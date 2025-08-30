@@ -965,9 +965,9 @@ level_up(struct mob_server_st *mob)
 				send_etc(mob->mob.client_index);
 				send_score(mob->mob.client_index);
 				send_affects(mob->mob.client_index);
-				send_client_string_message("+ + + Level UP + + +", mob->mob.client_index);
+				send_client_message("+ + + Level UP + + +", mob->mob.client_index);
 				send_emotion(mob->mob.client_index, Effect_LevelUp);
-				send_all_messages(mob->mob.client_index);
+				send_all_packets(mob->mob.client_index);
 				return;
 			} else if (mob->mob.class_master == CLASS_ARCH) {
 				mob->mob.b_status.level += 1;
@@ -1004,10 +1004,10 @@ level_up(struct mob_server_st *mob)
 				send_etc(mob->mob.client_index);
 				send_score(mob->mob.client_index);
 				send_affects(mob->mob.client_index);
-				send_client_string_message("+ + + Level UP + + +", mob->mob.client_index);
+				send_client_message("+ + + Level UP + + +", mob->mob.client_index);
 				send_emotion(mob->mob.client_index, Effect_LevelUp);
 
-				send_all_messages(mob->mob.client_index);
+				send_all_packets(mob->mob.client_index);
 				return;
 			}
 		}
@@ -1035,7 +1035,7 @@ mob_drop(struct mob_server_st *user, int mob_index)
 			if (empty_slot != -1) {
 				memcpy(&user->mob.inventory[empty_slot], &rune, sizeof(struct item_st));
 				send_create_item(user->mob.client_index, INV_TYPE, empty_slot, &user->mob.inventory[empty_slot]);
-				send_client_string_message(".:: PARABENS ::.", user->mob.client_index);
+				send_client_message(".:: PARABENS ::.", user->mob.client_index);
 			}
 		}
 	} else {
@@ -1120,7 +1120,7 @@ mob_drop(struct mob_server_st *user, int mob_index)
 			if (SucessDrop) {
 				int empty_slot = get_item_slot(user->mob.client_index, 0, INV_TYPE);
 				if (empty_slot == -1) {
-					send_client_string_message("Inventario cheio!", user->mob.client_index);
+					send_client_message("Inventario cheio!", user->mob.client_index);
 					break;
 				}
 
@@ -1137,7 +1137,7 @@ mob_drop(struct mob_server_st *user, int mob_index)
 			DropTemp.item_id = 4026;
 			int EmptySlot = get_item_slot(user->mob.client_index, 0, INV_TYPE);
 			if (EmptySlot == -1) {
-				send_client_string_message("Inventario cheio!", user->mob.client_index);
+				send_client_message("Inventario cheio!", user->mob.client_index);
 				return;
 			}
 			memcpy(&user->mob.inventory[EmptySlot], &DropTemp, sizeof(struct item_st));
@@ -1152,7 +1152,7 @@ mob_drop(struct mob_server_st *user, int mob_index)
 			int EmptySlot = get_item_slot(user->mob.client_index, 0, INV_TYPE);
 			
 			if (EmptySlot == -1) {
-				send_client_string_message("Inventario cheio!", user->mob.client_index);
+				send_client_message("Inventario cheio!", user->mob.client_index);
 				return;
 			
 			}

@@ -113,7 +113,7 @@ send_grid_item(int index, void *packet)
         continue;
 
       if (mob_id <= MAX_USERS_PER_CHANNEL)
-        send_one_message((unsigned char*) packet, xlen(packet), mob_id);
+        send_one_packet((unsigned char*) packet, xlen(packet), mob_id);
     }
   }
 }
@@ -198,7 +198,7 @@ send_etc(short index)
 	refresh_etc.magic = mob.magic_increment;
 	refresh_etc.gold = mob.gold;
 
-	add_client_message((unsigned char*) &refresh_etc, xlen(&refresh_etc), index);
+	add_client_packet((unsigned char*) &refresh_etc, xlen(&refresh_etc), index);
 }
 
 void
@@ -233,7 +233,7 @@ send_affects(int index)
 		}
 	}
 
-	add_client_message((unsigned char*) &send_affect, xlen(&send_affect), index);
+	add_client_packet((unsigned char*) &send_affect, xlen(&send_affect), index);
 }
 
 void
@@ -289,7 +289,7 @@ send_grid_multicast(short position_x, short position_y, void *packet, int index)
 			if (packet == NULL || mob_id >= MAX_USERS_PER_CHANNEL)
 				continue;
 
-      send_one_message((unsigned char*) packet, xlen(packet), index);
+      send_one_packet((unsigned char*) packet, xlen(packet), index);
 		}
 	}
 }
@@ -356,7 +356,7 @@ send_grid_multicast_with_packet(int mob_index, short position_x, short position_
 				continue;
 			
 			if (packet != NULL && mob_id <= MAX_USERS_PER_CHANNEL)
-				send_one_message((unsigned char*) packet, xlen(packet), mob_id);
+				send_one_packet((unsigned char*) packet, xlen(packet), mob_id);
 
 			if (nX < dminPosX || nX >= dmaxPosX || nY < dminPosY || nY >= dmaxPosY) {
 				if (mob_id <= MAX_USERS_PER_CHANNEL) {
@@ -366,7 +366,7 @@ send_grid_multicast_with_packet(int mob_index, short position_x, short position_
 					signal_parm.header.operation_code = 0x165;
 					signal_parm.data = DELETE_NORMAL;
 
-					send_one_message((unsigned char*) &signal_parm, sizeof(struct packet_signal_parm), mob_id);
+					send_one_packet((unsigned char*) &signal_parm, sizeof(struct packet_signal_parm), mob_id);
 				}
 
 				if (mob_index <= MAX_USERS_PER_CHANNEL) {
@@ -376,7 +376,7 @@ send_grid_multicast_with_packet(int mob_index, short position_x, short position_
 					signal_parm.header.operation_code = 0x165;
 					signal_parm.data = DELETE_NORMAL;
 
-					send_one_message((unsigned char*) &signal_parm, sizeof(struct packet_signal_parm), mob_index);
+					send_one_packet((unsigned char*) &signal_parm, sizeof(struct packet_signal_parm), mob_index);
 				}
 			}
 		}
@@ -399,7 +399,7 @@ send_grid_multicast_with_packet(int mob_index, short position_x, short position_
 						send_create_mob(mob_index, mob_id);
 
 					if (packet != NULL && mob_id <= MAX_USERS_PER_CHANNEL)
-						send_one_message((unsigned char*) packet, xlen(packet), mob_id);
+						send_one_packet((unsigned char*) packet, xlen(packet), mob_id);
 				}
 
 				if (init_id > 0) {
@@ -421,10 +421,10 @@ send_grid_multicast_with_packet(int mob_index, short position_x, short position_
 							door.init_id = init_id + 10000;
 
 							if (mob_id <= MAX_USERS_PER_CHANNEL)
-								send_one_message((unsigned char*) &door, sizeof(struct packet_door), mob_id);
+								send_one_packet((unsigned char*) &door, sizeof(struct packet_door), mob_id);
 
 							if (mob_index <= MAX_USERS_PER_CHANNEL)
-								send_one_message((unsigned char*) &door, xlen(&door), mob_index);
+								send_one_packet((unsigned char*) &door, xlen(&door), mob_index);
 						}
 					}
 				}
@@ -521,14 +521,14 @@ send_party_experience(short mob_index, short killed_index)
 			dead_mob.killed_index = killed_index;
 			dead_mob.experience = tar->mob.experience;
 
-			add_client_message((unsigned char*) &dead_mob, xlen(&dead_mob), k);
+			add_client_packet((unsigned char*) &dead_mob, xlen(&dead_mob), k);
 			level_up(tar);
 			get_current_score(k);
 			send_score(k);
 			send_etc(k);
 			send_affects(k);
 
-			send_all_messages(k);
+			send_all_packets(k);
 		}
 	}
 }
@@ -578,7 +578,7 @@ send_env_effect(struct position_st min, struct position_st max, short effect_id,
 			continue;
 
 		if ((g_mobs[i].mob.current.X >= min.X && g_mobs[i].mob.current.X <= max.X) && (g_mobs[i].mob.current.Y >= min.Y && g_mobs[i].mob.current.Y <= max.Y)) {
-			send_one_message((unsigned char*) &send_effect, xlen(&send_effect), i);
+			send_one_packet((unsigned char*) &send_effect, xlen(&send_effect), i);
 		}
 	}
 }
@@ -598,10 +598,10 @@ send_mob_dead(int killer_index, int killed_index)
 			if (check_pvp_area(killer_index) == 2) {
 				if (frag) {
 					set_pk_points(killer_index, cpoint);
-					send_client_string_message("Foi reduzido o CP em -1 e frag aumentado em +1.", killer_index);
+					send_client_message("Foi reduzido o CP em -1 e frag aumentado em +1.", killer_index);
 				} else {
 					set_pk_points(killer_index, cpoint);
-					send_client_string_message("Seu CP foi reduzido em -4.", killer_index);
+					send_client_message("Seu CP foi reduzido em -4.", killer_index);
 				}
 
 				get_create_mob(killer_index, killer_index);
@@ -650,7 +650,7 @@ send_mob_dead(int killer_index, int killed_index)
 	dead_mob.killer_index = killer_index;
 	dead_mob.killed_index = killed_index;
 	dead_mob.experience = killer->mob.experience;
-	send_one_message((unsigned char *) &dead_mob, xlen(&dead_mob), killer_index);
+	send_one_packet((unsigned char *) &dead_mob, xlen(&dead_mob), killer_index);
 
 	time_t now = time(NULL);
 	n->death_time[killed->death_id] = now;
@@ -773,7 +773,7 @@ CM_CONT:
 			if (target_index < MAX_USERS_PER_CHANNEL) {
 				send_etc(target_index);
 				send_affects(target_index);
-				send_all_messages(target_index);
+				send_all_packets(target_index);
 			}
 		}
 	} else {
@@ -849,7 +849,7 @@ CM_CONT:
 					send_mob_dead(attacker->summoner, target_index);
 					send_affects(attacker->summoner);
 					level_up(&g_mobs[attacker->summoner]);
-					send_all_messages(attacker->summoner);
+					send_all_packets(attacker->summoner);
 				}
 			}
 		} else {
@@ -859,7 +859,7 @@ CM_CONT:
 			if (target_index < MAX_USERS_PER_CHANNEL) {
 				send_etc(target_index);
 				send_affects(target_index);
-				send_all_messages(target_index);
+				send_all_packets(target_index);
 			}
 		}
 	}
@@ -870,7 +870,7 @@ CM_CONT:
 	if (attacker_index <= MAX_USERS_PER_CHANNEL) {
 		send_etc(attacker_index);
 		send_affects(attacker_index);
-		send_all_messages(attacker_index);
+		send_all_packets(attacker_index);
 	}
 }
 
@@ -890,5 +890,5 @@ send_create_item(int user_index, short inventory_type, short inventory_slot, str
 	else
 		create_item.item = *item;
 
-	send_one_message((unsigned char *) &create_item, xlen(&create_item), user_index);
+	send_one_packet((unsigned char *) &create_item, xlen(&create_item), user_index);
 }

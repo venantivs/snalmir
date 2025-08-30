@@ -141,12 +141,12 @@ bool
 login_user(struct packet_request_login* request_login, int user_index)
 {
 	if (request_login->version != CLIENT_VERSION) {
-		send_client_string_message("Atualize seu WYD.", user_index);
+		send_client_message("Atualize seu WYD.", user_index);
 		return false;
 	}
 
 	if (strlen(request_login->name) == 16 || strlen(request_login->password) == 12) {
-		send_client_string_message("Nome e/ou Senha muito grande.", user_index);
+		send_client_message("Nome e/ou Senha muito grande.", user_index);
 		return false;
 	}
 
@@ -159,17 +159,17 @@ login_user(struct packet_request_login* request_login, int user_index)
 	bool loaded_account = load_account(request_login->name, request_login->password, account, user_index);
 
 	if (!loaded_account) {
-		send_client_string_message("Conta nao encontrada.", user_index);
+		send_client_message("Conta nao encontrada.", user_index);
 		return false;
 	}
 
 	if (strcmp(account->profile.account_password, request_login->password) != 0) {
-		send_client_string_message("Senha incorreta.", user_index);
+		send_client_message("Senha incorreta.", user_index);
 		return false;
 	}
 
 	if (!logged_account) {
-		send_client_string_message("Conexao simultanea.", user_index);
+		send_client_message("Conexao simultanea.", user_index);
 		return false;
 	}
 
@@ -196,8 +196,8 @@ login_user(struct packet_request_login* request_login, int user_index)
 	memcpy(&g_users[user_index].storage, char_list.storage, sizeof(struct item_st) * MAX_STORAGE);
 	strncpy(char_list.name, request_login->name, sizeof(char_list.name));
 
-	add_client_message((unsigned char*)&char_list, char_list.header.size, user_index);
-	send_all_messages(user_index);
+	add_client_packet((unsigned char*)&char_list, char_list.header.size, user_index);
+	send_all_packets(user_index);
 
 	return true;
 }
@@ -215,23 +215,23 @@ login_user_numeric(struct packet_request_numeric_password *request_numeric_passw
 				// Senha correta.
 				g_users[user_index].server_data.mode = USER_SELCHAR;
 				request_numeric_password->header.operation_code = 0xFDE;
-				send_one_message((unsigned char*) request_numeric_password, xlen(request_numeric_password), user_index);
-				send_client_string_message("Seja bem-vindo ao servidor Snalmir!", user_index);
+				send_one_packet((unsigned char*) request_numeric_password, xlen(request_numeric_password), user_index);
+				send_client_message("Seja bem-vindo ao servidor Snalmir!", user_index);
 			} else {
 				// Senha numérica não confere.
-				send_client_string_message("Senha invalida.", user_index);
+				send_client_message("Senha invalida.", user_index);
 				send_signal(0xFDF, user_index); // Código de Operação de senha numérica incorreta.
 			}
 		} else {
 			// Alteração de senha numérica.
 			strncpy(account->profile.numeric_password, request_numeric_password->numeric, 6); // Tomar cuidado com o \0 que deve ficar no final.
-			send_client_string_message("Senha alterada.", user_index);
+			send_client_message("Senha alterada.", user_index);
 			save_account(user_index);
 		}
 	} else {
 		// Senha numérica ainda não atribuída (conta nova).
 		strncpy(account->profile.numeric_password, request_numeric_password->numeric, 6); // Tomar cuidado com o \0 que deve ficar no final.
-		send_client_string_message("Senha atribuida.", user_index);
+		send_client_message("Senha atribuida.", user_index);
 		save_account(user_index);
 	}
 
@@ -311,7 +311,7 @@ create_char(struct packet_request_create_char *request_create_char, int user_ind
 	char_list.header.operation_code = 0x110;
 
 	load_selchar(account->mob_account, &char_list.sel_list);
-	send_one_message((unsigned char*) &char_list, xlen(&char_list), user_index);
+	send_one_packet((unsigned char*) &char_list, xlen(&char_list), user_index);
 
 	g_users[user_index].server_data.mode = USER_SELCHAR;
 
@@ -371,7 +371,7 @@ delete_char(struct packet_request_delete_char *request_delete_char, int user_ind
 	delete_char.header.operation_code = 0x112;
 
 	load_selchar(account->mob_account, &delete_char.sel_list);
-	send_one_message((unsigned char*) &delete_char, xlen(&delete_char), user_index);
+	send_one_packet((unsigned char*) &delete_char, xlen(&delete_char), user_index);
 
 	g_users[user_index].server_data.mode = USER_SELCHAR;
 
@@ -425,7 +425,7 @@ enter_world(struct packet_request_enter_world *request_enter_world, int user_ind
 	}
 
 	if (error) {
-		send_client_string_message("Erro ao entrar no jogo.", user_index);
+		send_client_message("Erro ao entrar no jogo.", user_index);
 		g_users[user_index].server_data.mode = USER_SELCHAR;
 		return true;
 	}
@@ -478,7 +478,7 @@ enter_world(struct packet_request_enter_world *request_enter_world, int user_ind
 	}
 
 	memcpy(&enter_world.character, character_mob, sizeof(struct mob_st));
-	send_one_message((unsigned char*) &enter_world, xlen(&enter_world) - 4, user_index);
+	send_one_packet((unsigned char*) &enter_world, xlen(&enter_world) - 4, user_index);
 	memset(&character->baby_mob[0], 0, sizeof(character->baby_mob));
 
 	get_create_mob(user_index, user_index);
@@ -504,7 +504,7 @@ enter_world(struct packet_request_enter_world *request_enter_world, int user_ind
 	send_affects(user_index);
 	send_emotion(user_index, 14, 3);
 
-	send_all_messages(user_index);
+	send_all_packets(user_index);
 
 	return true;
 }

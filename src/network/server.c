@@ -82,7 +82,7 @@ sec_timer()
 		struct user_server_st *user = &g_users[i];
 		
 		if (user->server_data.user_close) {
-			send_all_messages(i);
+			send_all_packets(i);
 			close_user(i);
 			continue;
 		}
@@ -315,7 +315,7 @@ start_server()
 				while (!done) {
 					/* AQUI É ONDE O PAU QUEBRA */
 
-					message = read_client_message(user_index);
+					message = read_client_packet(user_index);
 
 					if (message == NULL)
 						break;

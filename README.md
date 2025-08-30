@@ -36,7 +36,7 @@ Por ser um projeto para estudos, o objetivo foi simplificar ao máximo as compli
 - [ ] Substituição de armazenamento de dados via arquivo por um SGBD.
 - [ ] Substuição dos tipos nativos pelos mais intuitivos definidos em `stdint.h`.
 - [ ] Adição de nome de parãmetros nas declarações de funções nos arquivos de cabeçalho.
-- [ ] Renomear funções de rede que contenham `message` para `packet`.
+- [x] Renomear funções de rede que contenham `message` para `packet`.
 - [x] Colocar prefixo g_ em variáveis globais.
 
 ## Setup & Execução
