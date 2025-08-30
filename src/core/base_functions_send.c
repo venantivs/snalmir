@@ -84,30 +84,30 @@ send_grid_item(int index, void *packet)
     posY = g_ground_items[index].position.Y;
 
   int VisX = VIEW_GRIDX, VisY = VIEW_GRIDY,
-    minPosX = (posX - HALF_GRIDX),
-    minPosY = (posY - HALF_GRIDY);
+    min_pos_x = (posX - HALF_GRIDX),
+    min_pos_y = (posY - HALF_GRIDY);
 
-  if ((minPosX + VisX) >= MAX_GRIDX)
-    VisX = (VisX - (VisX + minPosX - MAX_GRIDX));
+  if ((min_pos_x + VisX) >= MAX_GRIDX)
+    VisX = (VisX - (VisX + min_pos_x - MAX_GRIDX));
 
-  if ((minPosY + VisY) >= MAX_GRIDY)
-    VisY = (VisY - (VisY + minPosY - MAX_GRIDY));
+  if ((min_pos_y + VisY) >= MAX_GRIDY)
+    VisY = (VisY - (VisY + min_pos_y - MAX_GRIDY));
 
-  if (minPosX < 0) {
-    minPosX = 0;
-    VisX = (VisX + minPosX);
+  if (min_pos_x < 0) {
+    min_pos_x = 0;
+    VisX = (VisX + min_pos_x);
   }
 
-  if (minPosY < 0) {
-    minPosY = 0;
-    VisY = (VisY + minPosY);
+  if (min_pos_y < 0) {
+    min_pos_y = 0;
+    VisY = (VisY + min_pos_y);
   }
 
-  int maxPosX = (minPosX + VisX),
-    maxPosY = (minPosY + VisY);
+  int max_pos_x = (min_pos_x + VisX),
+    max_pos_y = (min_pos_y + VisY);
 
-  for (int nY = minPosY; nY < maxPosY; nY++) {
-    for (int nX = minPosX; nX < maxPosX; nX++) {
+  for (int nY = min_pos_y; nY < max_pos_y; nY++) {
+    for (int nX = min_pos_x; nX < max_pos_x; nX++) {
       short mob_id = g_mob_grid[nY][nX];
       if (mob_id <= 0)
         continue;
@@ -174,7 +174,7 @@ send_score(short index)
   memset(&refresh_score.special, 0x0, 4);
 	uintptr_t affect_index = (uintptr_t) ((uintptr_t) refresh_score.affect - (uintptr_t) &refresh_score); // Calcula a posição (em bytes) do affect no packet
   get_affect(affect_index, user.mob.affect, (unsigned char*) &refresh_score);
-	send_grid_multicast(user.mob.current.X, user.mob.current.Y, (unsigned char*) &refresh_score, 0); // Envia para todos os Indexes
+	send_grid_multicast(user.mob.current, (unsigned char*) &refresh_score, 0); // Envia para todos os Indexes
 }
 
 void 
@@ -249,38 +249,38 @@ send_emotion(int index, int effect_type, int effect_value)
 
   struct mob_st user = g_mobs[index].mob;
 
-	send_grid_multicast(user.current.X, user.current.Y, (unsigned char *) &emotion, 0);
+	send_grid_multicast(user.current, (unsigned char *) &emotion, 0);
 }
 
 // TODO: REFATORAR
 void 
-send_grid_multicast(short position_x, short position_y, unsigned char *packet, int index)
+send_grid_multicast(struct position_st position, unsigned char *packet, int index)
 {
 	int VisX = VIEW_GRIDX, VisY = VIEW_GRIDY,
-		minPosX = (position_x - HALF_GRIDX),
-		minPosY = (position_y - HALF_GRIDY);
+		min_pos_x = (position.X - HALF_GRIDX),
+		min_pos_y = (position.Y - HALF_GRIDY);
 
-	if ((minPosX + VisX) >= MAX_GRIDX)
-		VisX = (VisX - (VisX + minPosX - MAX_GRIDX));
+	if ((min_pos_x + VisX) >= MAX_GRIDX)
+		VisX = (VisX - (VisX + min_pos_x - MAX_GRIDX));
 
-	if ((minPosY + VisY) >= MAX_GRIDY)
-		VisY = (VisY - (VisY + minPosY - MAX_GRIDY));
+	if ((min_pos_y + VisY) >= MAX_GRIDY)
+		VisY = (VisY - (VisY + min_pos_y - MAX_GRIDY));
 
-	if (minPosX < 0) {
-		minPosX = 0;
-		VisX = (VisX + minPosX);
+	if (min_pos_x < 0) {
+		min_pos_x = 0;
+		VisX = (VisX + min_pos_x);
 	}
 
-	if (minPosY < 0) {
-		minPosY = 0;
-		VisY = (VisY + minPosY);
+	if (min_pos_y < 0) {
+		min_pos_y = 0;
+		VisY = (VisY + min_pos_y);
 	}
 
-	int maxPosX = (minPosX + VisX),
-		maxPosY = (minPosY + VisY);
+	int max_pos_x = (min_pos_x + VisX),
+		max_pos_y = (min_pos_y + VisY);
 
-	for (int nY = minPosY; nY < maxPosY; nY++) {
-		for (int nX = minPosX; nX < maxPosX; nX++) {
+	for (int nY = min_pos_y; nY < max_pos_y; nY++) {
+		for (int nX = min_pos_x; nX < max_pos_x; nX++) {
 			short mob_id = g_mob_grid[nY][nX];
 
 			if (mob_id <= 0 || index == mob_id)
@@ -295,39 +295,41 @@ send_grid_multicast(short position_x, short position_y, unsigned char *packet, i
 }
 
 void
-send_grid_multicast_with_packet(int mob_index, short position_x, short position_y, unsigned char *packet)
+send_grid_multicast_with_packet(int mob_index, struct position_st position, unsigned char *packet)
 {
 	if (mob_index <= 0 || mob_index >= MAX_SPAWN_LIST)
 		return;
 
 	struct mob_st *mob = &g_mobs[mob_index].mob;
 
-	int VisX = VIEW_GRIDX, VisY = VIEW_GRIDY,
-		minPosX = (mob->current.X - HALF_GRIDX),
-		minPosY = (mob->current.Y - HALF_GRIDY);
+	int VisX = VIEW_GRIDX;
+	int VisY = VIEW_GRIDY;
+	int min_pos_x = (mob->current.X - HALF_GRIDX);
+	int	min_pos_y = (mob->current.Y - HALF_GRIDY);
 
-	if ((minPosX + VisX) >= MAX_GRIDX)
-		VisX = (VisX - (VisX + minPosX - MAX_GRIDX));
+	if ((min_pos_x + VisX) >= MAX_GRIDX)
+		VisX = (VisX - (VisX + min_pos_x - MAX_GRIDX));
 
-	if ((minPosY + VisY) >= MAX_GRIDY)
-		VisY = (VisY - (VisY + minPosY - MAX_GRIDY));
+	if ((min_pos_y + VisY) >= MAX_GRIDY)
+		VisY = (VisY - (VisY + min_pos_y - MAX_GRIDY));
 
-	if (minPosX < 0) {
-		minPosX = 0;
-		VisX = (VisX + minPosX);
+	if (min_pos_x < 0) {
+		min_pos_x = 0;
+		VisX = (VisX + min_pos_x);
 	}
 
-	if (minPosY < 0) {
-		minPosY = 0;
-		VisY = (VisY + minPosY);
+	if (min_pos_y < 0) {
+		min_pos_y = 0;
+		VisY = (VisY + min_pos_y);
 	}
 
-	int maxPosX = (minPosX + VisX),
-		maxPosY = (minPosY + VisY);
+	int max_pos_x = (min_pos_x + VisX);
+	int max_pos_y = (min_pos_y + VisY);
 
-	int dVisX = VIEW_GRIDX, dVisY = VIEW_GRIDY,
-		dminPosX = (position_x - HALF_GRIDX),
-		dminPosY = (position_y - HALF_GRIDY);
+	int dVisX = VIEW_GRIDX;
+	int dVisY = VIEW_GRIDY;
+	int dminPosX = (position.X - HALF_GRIDX);
+	int dminPosY = (position.Y - HALF_GRIDY);
 
 	if ((dminPosX + dVisX) >= MAX_GRIDX)
 		dVisX = (dVisX - (dVisX + dminPosX - MAX_GRIDX));
@@ -345,11 +347,11 @@ send_grid_multicast_with_packet(int mob_index, short position_x, short position_
 		dVisY = (dVisY + dminPosY);
 	}
 
-	int dmaxPosX = (dminPosX + dVisX),
-		dmaxPosY = (dminPosY + dVisY);
+	int dmaxPosX = (dminPosX + dVisX);
+	int dmaxPosY = (dminPosY + dVisY);
 
-	for (int nY = minPosY; nY < maxPosY; nY++) {
-		for (int nX = minPosX; nX < maxPosX; nX++) {
+	for (int nY = min_pos_y; nY < max_pos_y; nY++) {
+		for (int nX = min_pos_x; nX < max_pos_x; nX++) {
 			int mob_id = g_mob_grid[nY][nX];
 			
 			if (mob_id <= 0 || mob_index == mob_id)
@@ -382,15 +384,15 @@ send_grid_multicast_with_packet(int mob_index, short position_x, short position_
 		}
 	}
 
-	mob->current.X = position_x;
-	mob->current.Y = position_y;
+	mob->current.X = position.X;
+	mob->current.Y = position.Y;
 
 	for (int nY = dminPosY; nY < dmaxPosY; nY++) {
 		for (int nX = dminPosX; nX < dmaxPosX; nX++) {
 			short init_id = g_item_grid[nY][nX];
 			short mob_id = g_mob_grid[nY][nX];
 
-			if (nX < minPosX || nX >= maxPosX || nY < minPosY || nY >= maxPosY) {
+			if (nX < min_pos_x || nX >= max_pos_x || nY < min_pos_y || nY >= max_pos_y) {
 				if (mob_id > 0 && mob_index != mob_id) {
 					if (mob_id <= MAX_USERS_PER_CHANNEL)
 						send_create_mob(mob_id, mob_index);
@@ -432,8 +434,8 @@ send_grid_multicast_with_packet(int mob_index, short position_x, short position_
 		}
 	}
 
-	mob->current.X = position_x;
-	mob->current.Y = position_y;
+	mob->current.X = position.X;
+	mob->current.Y = position.Y;
 }
 
 void
@@ -445,7 +447,7 @@ send_remove_mob(int mob_index, int to_remove_index, int delete_type)
 	remove_mob_signal.header.operation_code = 0x165;
 	remove_mob_signal.data = delete_type;
 
-	send_grid_multicast_with_packet(0, g_mobs[mob_index].mob.current.X, g_mobs[mob_index].mob.current.Y, (unsigned char*) &remove_mob_signal);
+	send_grid_multicast_with_packet(0, g_mobs[mob_index].mob.current, (unsigned char *) &remove_mob_signal);
 }
 
 void
@@ -456,12 +458,12 @@ send_teleport(int mob_index, struct position_st destination)
 	if (mob->current.X == destination.X && mob->current.Y == destination.Y)
 		return;
 
-	update_world(mob_index, &destination.X, &destination.Y, WORLD_MOB);
+	update_world(mob_index, &destination, WORLD_MOB);
 
 	mob->last_position.X = mob->current.X;
 	mob->last_position.Y = mob->current.Y;
 
-	get_action(mob_index, destination.X, destination.Y, MOVE_TELEPORT, NULL);
+	get_action(mob_index, destination, MOVE_TELEPORT, NULL);
 }
 
 short
@@ -620,7 +622,7 @@ send_mob_dead(int killer_index, int killed_index)
 		}
 
 		g_mobs[killer_index].mob.last_position = g_mobs[killer_index].mob.current;
-		get_action(killer_index, g_mobs[killer_index].mob.current.X, g_mobs[killer_index].mob.current.Y, MOVE_NORMAL, NULL);
+		get_action(killer_index, g_mobs[killer_index].mob.current, MOVE_NORMAL, NULL);
 
 		return;
 	}
@@ -746,8 +748,6 @@ send_attack(int attacker_index, int target_index)
 CM_CONT:
 	if (CM) {
 		int hp = (target->mob.status.current_mp - damage);
-		short posX = target->mob.current.X;
-		short posY = target->mob.current.Y;
 		if (hp <= 0) {
 			CM = false;
 			for (size_t i = 0; i < MAX_AFFECT; i++) {
@@ -765,7 +765,7 @@ CM_CONT:
 		} else {
 			target->mob.status.current_mp = target->mob.status.current_mp - damage;
 			
-			send_grid_multicast(posX, posY, (unsigned char*) &attack_single, 0);
+			send_grid_multicast(target->mob.current, (unsigned char*) &attack_single, 0);
 			get_current_score(target_index);
 			send_score(target_index);
 			
@@ -777,10 +777,8 @@ CM_CONT:
 		}
 	} else {
 		int hp = (target->mob.status.current_hp - damage);
-		short posX = target->mob.current.X;
-		short posY = target->mob.current.Y;
 		
-		send_grid_multicast(posX, posY, (unsigned char*) &attack_single, 0);
+		send_grid_multicast(target->mob.current, (unsigned char*) &attack_single, 0);
 		
 		if (hp <= 0) {
 			if (target_index <= MAX_USERS_PER_CHANNEL) {

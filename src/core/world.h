@@ -12,9 +12,9 @@ extern short g_item_grid[MAX_INIT_ITEM_LIST][MAX_INIT_ITEM_LIST];
 extern int g_height_grid[MAX_INIT_ITEM_LIST][MAX_INIT_ITEM_LIST];
 extern struct guildzone_st g_guild_zone[MAX_GUILD_ZONE];
 
-bool update_world(int index, short *position_x, short *position_y, int flag);
-bool get_empty_mob_grid(int index, short *position_x, short *position_y);
-bool get_empty_item_grid(int index, short *position_x, short *position_y);
+bool update_world(int index, struct position_st *position, int flag);
+bool get_empty_mob_grid(int index, struct position_st *position);
+bool get_empty_item_grid(int index, struct position_st *position);
 
 void read_height_map();
 bool initialize_ground_items();

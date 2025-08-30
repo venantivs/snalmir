@@ -35,18 +35,18 @@ load_world()
 }
 
 bool
-update_world(int index, short *position_x, short *position_y, int flag)
+update_world(int index, struct position_st *position, int flag)
 {
   bool empty_grid = false;
   switch(flag) {
   case WORLD_MOB:
     if (index >= MAX_SPAWN_LIST || index < 0) return false;
 
-    empty_grid = get_empty_mob_grid(index, position_x, position_y);
+    empty_grid = get_empty_mob_grid(index, position);
 
     if (empty_grid) {
       g_mob_grid[g_mobs[index].mob.current.Y][g_mobs[index].mob.current.X] = 0;
-      g_mob_grid[*position_y][*position_x] = index;
+      g_mob_grid[position->Y][position->X] = index;
       return true;
     } else
       return false;
@@ -54,11 +54,11 @@ update_world(int index, short *position_x, short *position_y, int flag)
     if (index >= MAX_INIT_ITEM_LIST || index < 0)
       return false;
 
-    empty_grid = get_empty_item_grid(index, position_x, position_y);
+    empty_grid = get_empty_item_grid(index, position);
 
     if (empty_grid)
     {
-      g_item_grid[*position_y][*position_x] = index;
+      g_item_grid[position->Y][position->X] = index;
       return true;
     } else
       return false;
@@ -69,19 +69,19 @@ update_world(int index, short *position_x, short *position_y, int flag)
 
 /* REFATORAR ISSO */
 bool
-get_empty_mob_grid(int index, short *position_x, short *position_y)
+get_empty_mob_grid(int index, struct position_st *position)
 {
-  if (*position_x < 0 || *position_x >= MAX_GRIDX || *position_y < 0 || *position_y >= MAX_GRIDY) return false;
+  if (position->X < 0 || position->X >= MAX_GRIDX || position->Y < 0 || position->Y >= MAX_GRIDY) return false;
 
-  if (g_mob_grid[*position_y][*position_x] == index) return true;
+  if (g_mob_grid[position->Y][position->X] == index) return true;
 
-  if (g_mob_grid[*position_y][*position_x] == 0)
-    if (height_grid[*position_y][*position_x] != 127)
+  if (g_mob_grid[position->Y][position->X] == 0)
+    if (height_grid[position->Y][position->X] != 127)
       return true;
 
-  for (int y = (*position_y - 1); y <= (*position_y + 1); y++)
+  for (int y = (position->Y - 1); y <= (position->Y + 1); y++)
   {
-    for (int x = (*position_x - 1); x <= (*position_x + 1); x++)
+    for (int x = (position->X - 1); x <= (position->X + 1); x++)
     {
       if (x < 0 || y < 0 || x >= MAX_GRIDX || y >= MAX_GRIDY)
         continue;
@@ -90,17 +90,17 @@ get_empty_mob_grid(int index, short *position_x, short *position_y)
       {
         if (height_grid[y][x] != 127)
         {
-          *position_x = x;
-          *position_y = y;
+          position->X = x;
+          position->Y = y;
           return true;
         }
       }
     }
   }
 
-  for (int y = (*position_y - 2); y <= (*position_y + 2); y++)
+  for (int y = (position->Y - 2); y <= (position->Y + 2); y++)
   {
-    for (int x = (*position_x - 2); x <= (*position_x + 2); x++)
+    for (int x = (position->X - 2); x <= (position->X + 2); x++)
     {
       if (x < 0 || y < 0 || x >= MAX_GRIDX || y >= MAX_GRIDY)
         continue;
@@ -109,17 +109,17 @@ get_empty_mob_grid(int index, short *position_x, short *position_y)
       {
         if (height_grid[y][x] != 127)
         {
-          *position_x = x;
-          *position_y = y;
+          position->X = x;
+          position->Y = y;
           return true;
         }
       }
     }
   }
 
-  for (int y = (*position_y - 3); y <= (*position_y + 3); y++)
+  for (int y = (position->Y - 3); y <= (position->Y + 3); y++)
   {
-    for (int x = (*position_x - 3); x <= (*position_x + 3); x++)
+    for (int x = (position->X - 3); x <= (position->X + 3); x++)
     {
       if (x < 0 || y < 0 || x >= MAX_GRIDX || y >= MAX_GRIDY)
         continue;
@@ -128,17 +128,17 @@ get_empty_mob_grid(int index, short *position_x, short *position_y)
       {
         if (height_grid[y][x] != 127)
         {
-          *position_x = x;
-          *position_y = y;
+          position->X = x;
+          position->Y = y;
           return true;
         }
       }
     }
   }
 
-  for (int y = (*position_y - 4); y <= (*position_y + 4); y++)
+  for (int y = (position->Y - 4); y <= (position->Y + 4); y++)
   {
-    for (int x = (*position_x - 4); x <= (*position_x + 4); x++)
+    for (int x = (position->X - 4); x <= (position->X + 4); x++)
     {
       if (x < 0 || y < 0 || x >= MAX_GRIDX || y >= MAX_GRIDY)
         continue;
@@ -147,17 +147,17 @@ get_empty_mob_grid(int index, short *position_x, short *position_y)
       {
         if (height_grid[y][x] != 127)
         {
-          *position_x = x;
-          *position_y = y;
+          position->X = x;
+          position->Y = y;
           return true;
         }
       }
     }
   }
 
-  for (int y = (*position_y - 5); y <= (*position_y + 5); y++)
+  for (int y = (position->Y - 5); y <= (position->Y + 5); y++)
   {
-    for (int x = (*position_x - 5); x <= (*position_x + 5); x++)
+    for (int x = (position->X - 5); x <= (position->X + 5); x++)
     {
       if (x < 0 || y < 0 || x >= MAX_GRIDX || y >= MAX_GRIDY)
         continue;
@@ -166,17 +166,17 @@ get_empty_mob_grid(int index, short *position_x, short *position_y)
       {
         if (height_grid[y][x] != 127)
         {
-          *position_x = x;
-          *position_y = y;
+          position->X = x;
+          position->Y = y;
           return true;
         }
       }
     }
   }
 
-  for (int y = (*position_y - 6); y <= (*position_y + 6); y++)
+  for (int y = (position->Y - 6); y <= (position->Y + 6); y++)
   {
-    for (int x = (*position_x - 6); x <= (*position_x + 6); x++)
+    for (int x = (position->X - 6); x <= (position->X + 6); x++)
     {
       if (x < 0 || y < 0 || x >= MAX_GRIDX || y >= MAX_GRIDY)
         continue;
@@ -185,8 +185,8 @@ get_empty_mob_grid(int index, short *position_x, short *position_y)
       {
         if (height_grid[y][x] != 127)
         {
-          *position_x = x;
-          *position_y = y;
+          position->X = x;
+          position->Y = y;
           return true;
         }
       }
@@ -197,27 +197,27 @@ get_empty_mob_grid(int index, short *position_x, short *position_y)
 }
 
 bool
-get_empty_item_grid(int index, short *position_x, short *position_y)
+get_empty_item_grid(int index, struct position_st *position)
 {
-  if (*position_x < 0 || *position_x >= 4096 || *position_y < 0 || *position_y >= 4096)
+  if (position->X < 0 || position->X >= 4096 || position->Y < 0 || position->Y >= 4096)
     return false;
 
-  if (g_item_grid[*position_y][*position_x] == index)
+  if (g_item_grid[position->Y][position->X] == index)
     return true;
 
-  if (g_item_grid[*position_y][*position_x] == 0) // ??????
-    if (height_grid[*position_y][*position_x] != 127)
+  if (g_item_grid[position->Y][position->X] == 0) // ??????
+    if (height_grid[position->Y][position->X] != 127)
       return true;
 
-  for (int y = (*position_y - 1); y <= (*position_y + 1); y++) {
-    for (int x = (*position_x - 1); x <= (*position_x + 1); x++) {
+  for (int y = (position->Y - 1); y <= (position->Y + 1); y++) {
+    for (int x = (position->X - 1); x <= (position->X + 1); x++) {
       if (x < 0 || y < 0 || x >= 4096 || y >= 4096)
         continue;
 
       if (g_item_grid[y][x] == 0) {
         if (height_grid[y][x] != 127) {
-          *position_x = x;
-          *position_y = y;
+          position->X = x;
+          position->Y = y;
           return true;
         }
       }
@@ -262,9 +262,8 @@ initialize_ground_items()
 		g_ground_items[j].item_index = j;
 
 		struct ground_item_st *init_item = &g_ground_items[j];
-		short position_x = init_item->position.X, position_y = init_item->position.Y;
 
-		if (!update_world(j, &position_x, &position_y, WORLD_ITEM)) {
+		if (!update_world(j, &init_item->position, WORLD_ITEM)) {
 			memset(&g_ground_items[j], 0, sizeof(struct init_item_st));
 			continue;
 		}
@@ -272,8 +271,6 @@ initialize_ground_items()
 		if (j > max_item_init)
 			max_item_init = j;
 
-		init_item->position.X = position_x;
-		init_item->position.Y = position_y;
 	}
 
 	return true;  

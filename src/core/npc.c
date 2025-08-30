@@ -237,10 +237,7 @@ spawn_mobs()
         if (!index)
           break;
 
-        short position_x = npc_mob->start.position.X;
-        short position_y = npc_mob->start.position.Y;
-
-        if (!update_world(index, &position_x, &position_y, WORLD_MOB)) {
+        if (!update_world(index, &npc_mob->start.position, WORLD_MOB)) {
           fatal_error("Erro ao executar #update_world.\n");
           continue;
         }
@@ -254,12 +251,9 @@ spawn_mobs()
         current_mob->next_action = (clock() + 800);
         current_mob->spawn_type = SPAWN_TELEPORT;
         current_mob->generate_index = i;
-        current_mob->mob.last_position.X = position_x;
-        current_mob->mob.last_position.Y = position_y;
-        current_mob->mob.current.X = position_x;
-        current_mob->mob.current.Y = position_y;
-        current_mob->mob.dest.X = position_x;
-        current_mob->mob.dest.Y = position_y;
+        current_mob->mob.last_position = npc_mob->start.position;
+        current_mob->mob.current = npc_mob->start.position;
+        current_mob->mob.dest = npc_mob->start.position;
         current_mob->death_id = death_id;
 
         if (is_pesa_mob) {
@@ -300,33 +294,33 @@ spawn_mobs()
 void
 action_mob(int sec_counter)
 {
-  short newPosX = 0;
-	short newPosY = 0;
-
 	for (size_t i = (BASE_MOB + 1); i <= spawn_count; i++) {
     struct mob_server_st *mob = &g_mobs[i];
 
+    clock_t opa = clock();
 		if (is_dead(*mob)) {
       continue;
-    } else if (clock() > mob->next_action) {
+    } else if (opa > mob->next_action) {
 			int action = standby_processor(mob);
+      struct position_st new_position = { 0 };
+
 			switch (action) {
 			case ACTION_MOVE:
-				newPosX = (g_gener_list[mob->generate_index].dest.position.X + (rand() % 3));
-				newPosY = (g_gener_list[mob->generate_index].dest.position.Y + (rand() % 3));
-				movement(mob, newPosX, newPosY, MOVE_NORMAL);
+				new_position.X = (g_gener_list[mob->generate_index].dest.position.X + (rand() % 3));
+				new_position.Y = (g_gener_list[mob->generate_index].dest.position.Y + (rand() % 3));
+				movement(mob, new_position, MOVE_NORMAL);
 				break;
 			
 			case ACTION_MOVE_RAND:
-				newPosX = (g_gener_list[mob->generate_index].start.position.X + (rand() % 3));
-				newPosY = (g_gener_list[mob->generate_index].start.position.Y + (rand() % 3));
-				movement(mob, newPosX, newPosY, MOVE_NORMAL);
+				new_position.X = (g_gener_list[mob->generate_index].start.position.X + (rand() % 3));
+				new_position.Y = (g_gener_list[mob->generate_index].start.position.Y + (rand() % 3));
+				movement(mob, new_position, MOVE_NORMAL);
 				break;
 
 			case ACTION_MOVE_TO_SUMMONER:
-				newPosX = (g_mobs[mob->summoner].mob.current.X);
-				newPosY = (g_mobs[mob->summoner].mob.current.Y);
-				movement(mob, newPosX, newPosY, MOVE_TELEPORT);
+				new_position.X = (g_mobs[mob->summoner].mob.current.X);
+				new_position.Y = (g_mobs[mob->summoner].mob.current.Y);
+				movement(mob, new_position, MOVE_TELEPORT);
 				break;
 
 			case ACTION_BATTLE:

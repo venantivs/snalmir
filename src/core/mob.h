@@ -84,7 +84,7 @@ void save_mob(int char_index, bool delete_mob, int user_index);
 void load_selchar(struct mob_st _char[4], struct char_list_st *);
 void clear_property(struct mob_server_st *mob);
 int standby_processor(struct mob_server_st *mob);
-void movement(struct mob_server_st *mob, int x, int y, int type);
+void movement(struct mob_server_st *mob, struct position_st position, int type);
 void processor_sec_timer_mob(struct mob_server_st *mob, int sec_counter);
 void add_enemy_list(struct mob_server_st *mob, short target_id);
 void remove_enemy_list(struct mob_server_st *mob, short target_id);

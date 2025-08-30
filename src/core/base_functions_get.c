@@ -189,7 +189,7 @@ get_anct_code(struct item_st *item)
 }
 
 void
-get_action(int mob_index, short posX, short posY, int type, char *command)
+get_action(int mob_index, struct position_st position, int type, char *command)
 {
 	struct mob_st *mob = &g_mobs[mob_index].mob;
 
@@ -199,8 +199,7 @@ get_action(int mob_index, short posX, short posY, int type, char *command)
 	request_action.header.index = mob_index;
 	request_action.source_position = mob->current;
 	request_action.speed = mob->status.speed;
-	request_action.destiny_position.X = posX;
-	request_action.destiny_position.Y = posY;
+	request_action.destiny_position = position;
 	request_action.type = type;
 
 	memset(&request_action.command, 0, 24);
@@ -208,7 +207,7 @@ get_action(int mob_index, short posX, short posY, int type, char *command)
 	if (command != NULL)
 		strncpy(request_action.command, command, 24);
 
-	send_grid_multicast_with_packet(mob_index, posX, posY, (unsigned char*) &request_action);
+	send_grid_multicast_with_packet(mob_index, position, (unsigned char*) &request_action);
 
 	if (command != NULL || type == MOVE_TELEPORT) {
 		if (mob_index <= MAX_USERS_PER_CHANNEL)
@@ -328,6 +327,7 @@ get_create_mob(int create_index, int send_index)
 	}
 
 	strncpy(spawn_info.name, npc_mob->name, sizeof(spawn_info.name));
+	spawn_info.chaos_points = '\0'; // PROVAVELMENTE NAME É MAIS QUE 12
 	memcpy(&spawn_info.status, &npc_mob->status, sizeof(struct status_st));
 
 	if (create_index < MAX_USERS_PER_CHANNEL) {
@@ -379,18 +379,18 @@ get_create_mob(int create_index, int send_index)
 }
 
 void
-get_guild_zone(struct mob_server_st mob, short *position_x, short *position_y)
+get_guild_zone(struct mob_server_st mob, struct position_st *position)
 {
 	if (mob.mob.status.level <= 40 && mob.mob.class_master == CLASS_MORTAL) {
-		*position_x = 2112;
-		*position_y = 2042;
+		position->X = 2112;
+		position->Y = 2042;
 		return;
 	}
 
 	struct guildzone_st zone = g_guild_zone[mob.mob.info.city_id];
 
-	*position_x = zone.city_x + (rand() % 8);
-	*position_y = zone.city_y + (rand() % 8);
+	position->X = zone.city_x + (rand() % 8);
+	position->Y = zone.city_y + (rand() % 8);
 }
 
 void

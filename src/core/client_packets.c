@@ -345,24 +345,24 @@ request_movement(struct packet_request_action *request_action, int user_index)
 	for (size_t i = 0; i < MAX_GUILD_ZONE; i++) {
 		struct guildzone_st *zone = &g_guild_zone[i];
 		if (destination.X >= zone->area_guild_min_x && destination.X <= zone->area_guild_max_x && destination.Y >= zone->area_guild_min_y && destination.Y <= zone->area_guild_max_y) {
-			get_guild_zone(*mob, &destination.X, &destination.Y);
+			get_guild_zone(*mob, &destination);
 			send_teleport(user_index, destination);
 			send_client_message("Area pertencente a outra guilda.", user_index);
 			return true;
 		}
 	}
 
-	if (!update_world(user_index, &destination.X, &destination.Y, WORLD_MOB)) {
-		get_action(user_index, mob->mob.current.X, mob->mob.current.Y, MOVE_NORMAL, request_action->command);
+	if (!update_world(user_index, &destination, WORLD_MOB)) {
+		get_action(user_index, mob->mob.current, MOVE_NORMAL, request_action->command);
 		return true;
 	}
 
 	mob->mob.last_position = mob->mob.current;
 	
 	if (request_action->header.operation_code == 0x366)
-		get_action(user_index, destination.X, destination.Y, MOVE_NORMAL, NULL);
+		get_action(user_index, destination, MOVE_NORMAL, NULL);
 	else
-		get_action(user_index, destination.X, destination.Y, MOVE_NORMAL, request_action->command);
+		get_action(user_index, destination, MOVE_NORMAL, request_action->command);
 	
 	return true;
 }

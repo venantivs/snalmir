@@ -453,23 +453,19 @@ enter_world(struct packet_request_enter_world *request_enter_world, int user_ind
 	character_mob->status.current_hp = character_mob->status.max_hp;
 	character_mob->status.current_mp = character_mob->status.max_mp;
 
-	short position_x = -1, position_y = -1;
-	
-	get_guild_zone(*character, &position_x, &position_y);
+	struct position_st position = { -1, -1 };
+	get_guild_zone(*character, &position);
 
 	character->spawn_type = SPAWN_NORMAL;
 
-	enter_world.position.X = position_x;
-	enter_world.position.Y = position_y;
-	character->mob.current.X = position_x;
-	character->mob.current.Y = position_y;
-	character->mob.last_position.X = position_x;
-	character->mob.last_position.Y = position_y;
+	enter_world.position = position;
+	character->mob.current = position;
+	character->mob.last_position = position;
 
 	g_users[user_index].sel_char = character->mob.slot_index;
 	character->mob.guild_id = character->mob.equip[12].effect[1].value; // ????
 
-	if (!update_world(user_index, &position_x, &position_y, WORLD_MOB)) {
+	if (!update_world(user_index, &position, WORLD_MOB)) {
 		clear_property(character);
 		fprintf(stderr, "UPDATE WORLD FALHOU.\n");
 		send_signal(0x119, user_index);

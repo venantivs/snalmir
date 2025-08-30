@@ -517,27 +517,22 @@ get_enemy_from_view_by_mob_type(struct mob_server_st *mob, int mob_type)
 }
 
 void
-movement(struct mob_server_st *mob, int x, int y, int type)
+movement(struct mob_server_st *mob, struct position_st position, int type)
 {
-	if (x <= 0 || x >= MAX_GRIDX)
+	if (position.X <= 0 || position.X >= MAX_GRIDX)
 		return;
 
-	if (y <= 0 || y >= MAX_GRIDY)
+	if (position.Y <= 0 || position.Y >= MAX_GRIDY)
 		return;
 
-	short posX = x;
-	short posY = y;
+	mob->mob.dest = position;
 
-	mob->mob.dest.X = x;
-	mob->mob.dest.Y = y;
-
-	if (!update_world(mob->mob.client_index, &posX, &posY, WORLD_MOB))
+	if (!update_world(mob->mob.client_index, &position, WORLD_MOB))
     return;
 
-	mob->mob.last_position.X = mob->mob.current.X;
-	mob->mob.last_position.Y = mob->mob.current.Y;
+	mob->mob.last_position = mob->mob.current;
 
-	get_action(mob->mob.client_index, posX, posY, type, NULL);
+	get_action(mob->mob.client_index, position, type, NULL);
 }
 
 void
@@ -879,9 +874,9 @@ battle_processor(struct mob_server_st *mob)
 
 		double distance = get_distance(mob->mob.current, summoner_mob->mob.current);
 		if (distance > 14) {
-			short newPosX = (summoner_mob->mob.current.X);
-			short newPosY = (summoner_mob->mob.current.Y);
-			movement(mob, newPosX, newPosY, MOVE_TELEPORT);
+			struct position_st new_position = { 0 };
+			new_position = summoner_mob->mob.current;
+			movement(mob, new_position, MOVE_TELEPORT);
 			return NO_MORE_ACTION;
 		}
 	}
@@ -897,9 +892,9 @@ battle_processor(struct mob_server_st *mob)
 	} else {
 		double distance = get_distance(mob->mob.current, g_mobs[mob->current_target].mob.current);
 		if (distance > 2 && distance < 6) {
-			short newPosX = g_mobs[mob->current_target].mob.current.X;
-			short newPosY = g_mobs[mob->current_target].mob.current.Y;
-			movement(mob, newPosX, newPosY, MOVE_NORMAL);
+			struct position_st new_position = { 0 };
+			new_position = g_mobs[mob->current_target].mob.current;
+			movement(mob, new_position, MOVE_NORMAL);
 			return NO_MORE_ACTION;
 		}
 
