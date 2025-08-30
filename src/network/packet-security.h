@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-void	encrypt(unsigned char*[]);
-bool	decrypt(unsigned char*[]);
+void	encrypt(unsigned char *packet_buffer[]);
+bool	decrypt(unsigned char *packet_buffer[]);
 
 #endif

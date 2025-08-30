@@ -79,8 +79,8 @@ struct mob_server_st {
 };
 
 void load_base_char_mobs();
-void load_mob(int, int);
-void save_mob(int, bool, int);
+void load_mob(int char_index, int user_index);
+void save_mob(int char_index, bool delete_mob, int user_index);
 void load_selchar(struct mob_st _char[4], struct char_list_st *);
 void clear_property(struct mob_server_st *mob);
 int standby_processor(struct mob_server_st *mob);

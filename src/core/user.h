@@ -86,17 +86,17 @@ struct account_file_st {
 	struct subcelestial_st subcelestials[MOB_PER_ACCOUNT];
 };
 
-bool	create_account(const char *, const char *);
-void 	save_account(int);
-bool	delete_account(const char *, const char *);
-bool	accept_user(int, int, unsigned, char *);
-bool 	login_user(struct packet_request_login*, int);
-bool  login_user_numeric(struct packet_request_numeric_password*, int);
-bool	create_char(struct packet_request_create_char*, int);
-bool	delete_char(struct packet_request_delete_char*, int);
-bool	enter_world(struct packet_request_enter_world*, int);
+bool	create_account(const char *user, const char *password);
+void 	save_account(int user_index);
+bool	delete_account(const char *user, const char *password);
+bool	accept_user(int user_index, int socket_fd, unsigned ip, char *ip_str);
+bool 	login_user(struct packet_request_login* request_login, int user_index);
+bool  login_user_numeric(struct packet_request_numeric_password *request_numeric_password, int user_index);
+bool	create_char(struct packet_request_create_char *request_create_char, int user_index);
+bool	delete_char(struct packet_request_delete_char *request_delete_char, int user_index);
+bool	enter_world(struct packet_request_enter_world *request_enter_world, int user_index);
 void 	save_client(int user_index);
 void 	save_character(int user_index, int flag);
-bool 	close_user(int);
+bool 	close_user(int user_index);
 
 #endif
