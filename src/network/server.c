@@ -208,15 +208,6 @@ get_empty_user(void)
 }
 
 static void
-print_buffer(int user_index)
-{
-	for (size_t i = 0; i < 1024; i++)
-		printf("%hhx ", g_users[user_index].server_data.buffer.recv_buffer[i]);
-
-	printf("\n");
-}
-
-static void
 start_server()
 {
 	int listen_socket_fd, connection_socket_fd, epfd, nfds;

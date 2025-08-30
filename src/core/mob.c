@@ -1039,127 +1039,134 @@ mob_drop(struct mob_server_st *user, int mob_index)
 			}
 		}
 	} else {
-		int MaxItemDrop = 1 + DROP_RATE;
-		if (MaxItemDrop > 12)
-			MaxItemDrop = 12;
+		int max_item_drop = 1 + DROP_RATE;
+		if (max_item_drop > 12)
+			max_item_drop = 12;
 		
-		int DropGold = (mob->mob.gold * DROP_RATE);
-		if (DropGold > 2000000000)
-			DropGold = 2000000000;
+		int drop_gold = (mob->mob.gold * DROP_RATE);
+		if (drop_gold > 2000000000)
+			drop_gold = 2000000000;
 		
-		int CurrenItemDrop = 0;
-		int ArmorLevel = rand() % 6;
-		int WeaponLevel = rand() % 6;
+		int current_item_drop = 0;
+		int armor_level = rand() % 6;
+		int weapon_level = rand() % 6;
 
-		if (ArmorLevel <= 4)
-			ArmorLevel = 0;
+		if (armor_level <= 4)
+			armor_level = 0;
 		else
-			ArmorLevel = 1;
+			armor_level = 1;
 
-		if (WeaponLevel <= 4)
-			WeaponLevel = 0;
+		if (weapon_level <= 4)
+			weapon_level = 0;
 		else
-			WeaponLevel = 1;
+			weapon_level = 1;
 
-		int ItemBoss = (rand() % 100);
-		int RateDrop = DROP_RATE + user->drop_bonus;
+		int item_boss = (rand() % 100);
+		int drop_rate = DROP_RATE + user->drop_bonus;
 
-		if (user->mob.gold + DropGold > 2000000000)
+		if (user->mob.gold + drop_gold > 2000000000)
 			user->mob.gold = 2000000000;
 		else
-			user->mob.gold += DropGold;
+			user->mob.gold += drop_gold;
 
 		send_etc(user->mob.client_index);
-		for (size_t x = 0; x <= 62 && CurrenItemDrop < MaxItemDrop; x++) {
-			int slotIndex = x % 8;
-			int slotType = x / 8;
-			if ((CurrenItemDrop >= MaxItemDrop) && (slotType != 7) && slotIndex != 0)
+		for (size_t x = 0; x <= 62 && current_item_drop < max_item_drop; x++) {
+			int slot_index = x % 8;
+			int slot_type = x / 8;
+
+			if ((current_item_drop >= max_item_drop) && (slot_type != 7) && slot_index != 0)
 				continue;
-			struct item_st DropTemp;
-			memcpy(&DropTemp, &mob->mob.inventory[x], sizeof(struct item_st));
-			if (DropTemp.item_id <= 0) continue;
-			bool SucessDrop = false;
+
+			struct item_st drop_temp;
+			memcpy(&drop_temp, &mob->mob.inventory[x], sizeof(struct item_st));
+			if (drop_temp.item_id <= 0)
+				continue;
+
+			bool drop = false;
 			int css = rand() % 100;
-			if (css >(50 + (ArmorLevel * 25))) continue;
-			int Chance = 0;
-			if ((slotType == 0 || slotType == 2) && ArmorLevel == 0) //Armor level 0
-				Chance = (14 + RateDrop);
-			else if (slotType == 1 && ItemBoss <= 25) //(boos) (1/4)
-				Chance = (3 + RateDrop);
-			else if (slotType == 3 && WeaponLevel == 0)//WeaponLevel 0 //igual a tmsrv
-				Chance = (13 + RateDrop);
-			else if ((slotType == 4 || slotType == 5) && ArmorLevel == 1)//Armor Level 1
-				Chance = (8 + RateDrop);
-			else if (slotType == 6 && WeaponLevel == 1)//WeaponLevel 1
-				Chance = (8 + RateDrop);
-			else if (slotType == 7) { // Special Slots
-				if (slotIndex == 0) //slot 56 == 100% Confirmado TMSRV
-					Chance = 100;
-				else if (slotIndex == 1 || slotIndex == 2) //slot 57 e 58 == 50%
-					Chance = (20 + RateDrop);
-				else if (slotIndex == 3) // slot 59 == 3%
-					Chance = (2 + RateDrop);
-				else if (slotIndex == 4) // slot 60 == 10%
-					Chance = (5 + RateDrop);
-				else if (slotIndex == 5 || slotIndex == 6) //slot 61 e 62 == 5%
-					Chance = (3 + RateDrop);
+			if (css >(50 + (armor_level * 25)))
+				continue;
+
+			int chance = 0;
+			if ((slot_type == 0 || slot_type == 2) && armor_level == 0) {
+				chance = (14 + drop_rate);
+			} else if (slot_type == 1 && item_boss <= 25) { //(boos) (1/4)
+				chance = (3 + drop_rate);
+			} else if (slot_type == 3 && weapon_level == 0) {
+				chance = (13 + drop_rate);
+			} else if ((slot_type == 4 || slot_type == 5) && armor_level == 1) {
+				chance = (8 + drop_rate);
+			} else if (slot_type == 6 && weapon_level == 1) {
+				chance = (8 + drop_rate);
+			} else if (slot_type == 7) { // Special Slots
+				if (slot_index == 0) //slot 56 == 100% Confirmado TMSRV
+					chance = 100;
+				else if (slot_index == 1 || slot_index == 2) //slot 57 e 58 == 50%
+					chance = (20 + drop_rate);
+				else if (slot_index == 3) // slot 59 == 3%
+					chance = (2 + drop_rate);
+				else if (slot_index == 4) // slot 60 == 10%
+					chance = (5 + drop_rate);
+				else if (slot_index == 5 || slot_index == 6) //slot 61 e 62 == 5%
+					chance = (3 + drop_rate);
 			} else {
-				Chance = 0;
+				chance = 0;
 			}
 
-			if (Chance == 0) SucessDrop = false;
-			else {
-				int Sucess = 0;
+			if (chance == 0) {
+				drop = false;
+			} else {
+				int success = 0;
 				int tx = 50;
-				tx += 150;
-				Sucess = (rand() % tx);
-				if (Sucess <= Chance) SucessDrop = true;
-				else SucessDrop = false;
+				tx += 150; // ????
+				success = (rand() % tx);
+				drop = (success <= chance);
 			}
 
-			if (SucessDrop) {
+			if (drop) {
 				int empty_slot = get_item_slot(user->mob.client_index, 0, INV_TYPE);
 				if (empty_slot == -1) {
 					send_client_message("Inventario cheio!", user->mob.client_index);
 					break;
 				}
 
-				memcpy(&user->mob.inventory[empty_slot], &DropTemp, sizeof(struct item_st));
+				memcpy(&user->mob.inventory[empty_slot], &drop_temp, sizeof(struct item_st));
 				send_create_item(user->mob.client_index, INV_TYPE, empty_slot, &user->mob.inventory[empty_slot]);
-				CurrenItemDrop++;
+				current_item_drop++;
 			}
 		}
-		int Rate_Bonus = abs(rand() % 120);
-		if (Rate_Bonus <= 3)
-		{
-			struct item_st DropTemp;
-			memset(&DropTemp, 0, sizeof(struct item_st));
-			DropTemp.item_id = 4026;
-			int EmptySlot = get_item_slot(user->mob.client_index, 0, INV_TYPE);
-			if (EmptySlot == -1) {
+
+		int rate_bonus = abs(rand() % 120);
+		if (rate_bonus <= 3) {
+			struct item_st drop_temp;
+			memset(&drop_temp, 0, sizeof(struct item_st));
+			drop_temp.item_id = 4026;
+
+			int empty_slot = get_item_slot(user->mob.client_index, 0, INV_TYPE);
+			if (empty_slot == -1) {
 				send_client_message("Inventario cheio!", user->mob.client_index);
 				return;
 			}
-			memcpy(&user->mob.inventory[EmptySlot], &DropTemp, sizeof(struct item_st));
-			send_create_item(user->mob.client_index, INV_TYPE, EmptySlot, &user->mob.inventory[EmptySlot]);
+
+			memcpy(&user->mob.inventory[empty_slot], &drop_temp, sizeof(struct item_st));
+			send_create_item(user->mob.client_index, INV_TYPE, empty_slot, &user->mob.inventory[empty_slot]);
 		}
-		int Rate_Bonus2 = abs(rand() % 120);
-		if (Rate_Bonus2 <= 2)
-		{
-			struct item_st DropTemp;
-			memset(&DropTemp, 0, sizeof(struct item_st));
-			DropTemp.item_id = 4027;
-			int EmptySlot = get_item_slot(user->mob.client_index, 0, INV_TYPE);
-			
-			if (EmptySlot == -1) {
+
+		rate_bonus = abs(rand() % 120);
+		if (rate_bonus <= 2) {
+			struct item_st drop_temp;
+			memset(&drop_temp, 0, sizeof(struct item_st));
+			drop_temp.item_id = 4027;
+
+			int empty_slot = get_item_slot(user->mob.client_index, 0, INV_TYPE);
+			if (empty_slot == -1) {
 				send_client_message("Inventario cheio!", user->mob.client_index);
-				return;
-			
+				return;			
 			}
-			memcpy(&user->mob.inventory[EmptySlot], &DropTemp, sizeof(struct item_st));
-			send_create_item(user->mob.client_index, INV_TYPE, EmptySlot, &user->mob.inventory[EmptySlot]);
+
+			memcpy(&user->mob.inventory[empty_slot], &drop_temp, sizeof(struct item_st));
+			send_create_item(user->mob.client_index, INV_TYPE, empty_slot, &user->mob.inventory[empty_slot]);
 		}
 	}
-	return;
 }
 

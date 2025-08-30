@@ -2,7 +2,7 @@
  * Licença: GPLv3
  * Autor: callixtvs
  * Data: Dezembro de 2023
- * Atualização: Dezembro de 2023
+ * Atualização: Agosto de 2025
  * Arquivo: core/game_skills.c
  * Descrição: Arquivo onde são implementadas as funções que carregam as skills do jogo.
  */
@@ -43,9 +43,10 @@ load_skill_data()
       &spell.instance_type, &spell.instance_value, &spell.tick_type, &spell.tick_value,
       &spell.affect_type, &spell.affect_value, &spell.time, &spell.instance_attribute,
       &spell.tick_attribute, &spell.aggressive, &spell.max_target, &spell.party_check,
-      &spell.affect_resist, &spell.passive_check, &spell.unknown);
+      &spell.affect_resist);
 
-    if (index < 0 || index >= MAX_SKILL_DATA) continue;
+    if (index < 0 || index >= MAX_SKILL_DATA)
+      continue;
 
     memcpy(&g_skill_data[index], &spell, sizeof(struct skill_data_st));
   }

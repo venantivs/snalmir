@@ -217,9 +217,9 @@ get_action(int mob_index, short posX, short posY, int type, char *command)
 }
 
 void
-get_affect(int offset, struct affect_st *skills, unsigned char *buffer)
+get_affect(int affect_index, struct affect_st *skills, unsigned char *buffer)
 {
-	short *packet = (short*) &buffer[offset];
+	short *packet = (short*) &buffer[affect_index];
 
 	for (size_t i = 0; i < MAX_AFFECT; i++) {
 		int time = skills[i].time;
@@ -354,10 +354,8 @@ get_create_mob(int create_index, int send_index)
 		spawn_info.anct_code[i] = get_anct_code(equipped_item);
 	}
 
-	// TODO: Vê isso aqui com calma???
-	int offset = (int) ((int) spawn_info.affect) - ((int) &spawn_info);
-
-	get_affect(offset, npc_mob->affect, (unsigned char *) &spawn_info);
+	uintptr_t affect_index = (uintptr_t) ((uintptr_t) spawn_info.affect - (uintptr_t) &spawn_info); // Calcula a posição (em bytes) do affect no packet
+	get_affect(affect_index, npc_mob->affect, (unsigned char *) &spawn_info);
 
 	if (create_index <= MAX_USERS_PER_CHANNEL)
 		strncpy(spawn_info.tab, npc_mob->tab, 26);
@@ -1709,8 +1707,8 @@ get_exp_by_kill(unsigned int exp, int attacker_index, int target_index)
 	struct mob_st *attacker = &g_mobs[attacker_index].mob;
 	struct mob_st *target = &g_mobs[target_index].mob;
 
-	if ((attacker->class_master == CLASS_CELESTIAL || attacker->class_master == CLASS_SUB_CELESTIAL && attacker->equip[CAPE_SLOT].item_id >= 3197 && attacker->equip[CAPE_SLOT].item_id <= 3199)
-		|| (target->class_master == CLASS_CELESTIAL || target->class_master == CLASS_SUB_CELESTIAL && target->equip[CAPE_SLOT].item_id >= 3197 && target->equip[CAPE_SLOT].item_id <= 3199)) { //Celestial e Sub
+	if ((attacker->class_master == CLASS_CELESTIAL || (attacker->class_master == CLASS_SUB_CELESTIAL && attacker->equip[CAPE_SLOT].item_id >= 3197 && attacker->equip[CAPE_SLOT].item_id <= 3199))
+		|| (target->class_master == CLASS_CELESTIAL || (target->class_master == CLASS_SUB_CELESTIAL && target->equip[CAPE_SLOT].item_id >= 3197 && target->equip[CAPE_SLOT].item_id <= 3199))) { //Celestial e Sub
 		if (attacker->status.level >= MAX_LEVELCSH - 1 || target->status.level >= MAX_LEVELCSH - 1 || attacker->status.level < 0 || target->status.level < 0) {
 			if (attacker->experience >= 4050000000) {
 				attacker->experience = 4050000000;

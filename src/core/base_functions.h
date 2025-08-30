@@ -1,6 +1,7 @@
 #ifndef __BASE_FUNCTIONS_H__
 #define __BASE_FUNCTIONS_H__
 
+#include <stdint.h>
 #include <stddef.h>
 
 // GET
@@ -39,7 +40,7 @@ void send_affects(int index);
 void send_emotion(int index, int effect_type, int effect_value);
 void send_create_mob(int user_index, int mob_index);
 void send_remove_mob(int mob_index, int to_remove_index, int delete_type);
-void send_grid_multicast(short position_x, short position_y, void *packet, int index);
+void send_grid_multicast(short position_x, short position_y, unsigned char *packet, int index);
 void send_grid_multicast_with_packet(int mob_index, short position_x, short position_y, unsigned char *packet);
 void send_teleport(int mob_index, struct position_st destination);
 void send_create_item(int user_index, short inventory_type, short inventory_slot, struct item_st *item);

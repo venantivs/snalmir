@@ -172,9 +172,9 @@ send_score(short index)
 	refresh_score.status = user.mob.status;
 
   memset(&refresh_score.special, 0x0, 4);
-	int offset = (int)((int) refresh_score.affect - (int) &refresh_score); 
-  get_affect(offset, user.mob.affect, (unsigned char*) &refresh_score);
-	send_grid_multicast(user.mob.current.X, user.mob.current.Y, &refresh_score, 0); // Envia para todos os Indexes
+	uintptr_t affect_index = (uintptr_t) ((uintptr_t) refresh_score.affect - (uintptr_t) &refresh_score); // Calcula a posição (em bytes) do affect no packet
+  get_affect(affect_index, user.mob.affect, (unsigned char*) &refresh_score);
+	send_grid_multicast(user.mob.current.X, user.mob.current.Y, (unsigned char*) &refresh_score, 0); // Envia para todos os Indexes
 }
 
 void 
@@ -249,12 +249,12 @@ send_emotion(int index, int effect_type, int effect_value)
 
   struct mob_st user = g_mobs[index].mob;
 
-	send_grid_multicast(user.current.X, user.current.Y, &emotion, 0);
+	send_grid_multicast(user.current.X, user.current.Y, (unsigned char *) &emotion, 0);
 }
 
 // TODO: REFATORAR
 void 
-send_grid_multicast(short position_x, short position_y, void *packet, int index)
+send_grid_multicast(short position_x, short position_y, unsigned char *packet, int index)
 {
 	int VisX = VIEW_GRIDX, VisY = VIEW_GRIDY,
 		minPosX = (position_x - HALF_GRIDX),
@@ -497,38 +497,39 @@ send_party_experience(short mob_index, short killed_index)
 	struct mob_server_st *mob = &g_mobs[mob_index];
 	struct party_st *party = &g_parties[mob->party_index];
 
-	for (size_t x = 0; x < MAX_PARTY; x++) {
-		int k = party->players[x];
+	for (size_t i = 0; i < MAX_PARTY; i++) {
+		int party_player_index = party->players[i];
 		
-		if (k == -1)
+		if (party_player_index == -1)
 			continue;
 		
-		if (k == mob_index)
+		if (party_player_index == mob_index)
 			continue;
 		
-		struct mob_server_st *tar = &g_mobs[k];
-		int distance = get_distance(mob->mob.current, tar->mob.current);
+		struct mob_server_st *party_player = &g_mobs[party_player_index];
+
+		int distance = get_distance(mob->mob.current, party_player->mob.current);
 		if (distance < 8) {
-			int class_experience = ((get_exp_by_kill(g_mobs[killed_index].mob.experience, k, killed_index) * 70) / 100);
-			tar->mob.experience += class_experience;
+			int class_experience = ((get_exp_by_kill(g_mobs[killed_index].mob.experience, party_player_index, killed_index) * 70) / 100);
+			party_player->mob.experience += class_experience;
 
 			struct packet_dead_mob dead_mob;
 			dead_mob.header.size = 24;
 			dead_mob.header.operation_code = 0x338;
 			dead_mob.header.index = 0x7530;
-			dead_mob.hold = tar->mob.hold;
-			dead_mob.killer_index = k;
+			dead_mob.hold = party_player->mob.hold;
+			dead_mob.killer_index = party_player_index;
 			dead_mob.killed_index = killed_index;
-			dead_mob.experience = tar->mob.experience;
+			dead_mob.experience = party_player->mob.experience;
 
-			add_client_packet((unsigned char*) &dead_mob, xlen(&dead_mob), k);
-			level_up(tar);
-			get_current_score(k);
-			send_score(k);
-			send_etc(k);
-			send_affects(k);
+			add_client_packet((unsigned char*) &dead_mob, xlen(&dead_mob), party_player_index);
+			level_up(party_player);
+			get_current_score(party_player_index);
+			send_score(party_player_index);
+			send_etc(party_player_index);
+			send_affects(party_player_index);
 
-			send_all_packets(k);
+			send_all_packets(party_player_index);
 		}
 	}
 }
@@ -588,13 +589,13 @@ send_mob_dead(int killer_index, int killed_index)
 {
 	if (killed_index <= MAX_USERS_PER_CHANNEL && killer_index <= MAX_USERS_PER_CHANNEL) {
 		if (check_pvp_area(killer_index) >= 2 && !g_mobs[killer_index].in_duel) {
-			int minusCP = 1;
+			int minus_cp = 1;
 			bool frag = process_chaos_points(killer_index, killed_index);
 			
 			if (frag)
-				minusCP = 4;
+				minus_cp = 4;
 			
-			short cpoint = (killer_index) - minusCP;
+			short cpoint = (killer_index) - minus_cp;
 			if (check_pvp_area(killer_index) == 2) {
 				if (frag) {
 					set_pk_points(killer_index, cpoint);
@@ -666,7 +667,6 @@ send_mob_dead(int killer_index, int killed_index)
 	remove_object(killed_index, killed->mob.current, WORLD_MOB);
 	mob_drop(killer, killed_index);
 	clear_property(killed);
-	return;
 }
 
 void
@@ -674,8 +674,7 @@ send_attack(int attacker_index, int target_index)
 {
 	struct mob_server_st *attacker = &g_mobs[attacker_index];
 	struct mob_server_st *target = &g_mobs[target_index];
-	// CMob *Atk = &MainServer.pMob[Atacker];
-	// CMob *Def = &MainServer.pMob[Defender];
+
 	if (is_dead(*target))
 		return;
 
@@ -733,8 +732,8 @@ send_attack(int attacker_index, int target_index)
 	}
 
 	bool CM = false;
-	for (size_t x = 0; x < MAX_AFFECT; x++) {
-		if (target->mob.affect[x].index == FM_CONTROLE_MANA) {
+	for (size_t i = 0; i < MAX_AFFECT; i++) {
+		if (target->mob.affect[i].index == FM_CONTROLE_MANA) {
 			CM = true;
 			break;
 		}
@@ -751,13 +750,13 @@ CM_CONT:
 		short posY = target->mob.current.Y;
 		if (hp <= 0) {
 			CM = false;
-			for (size_t x = 0; x < MAX_AFFECT; x++) {
-				if (target->mob.affect[x].index == FM_CONTROLE_MANA) {
-					target->mob.affect[x].index = 0;
-					target->mob.affect[x].time = 0;
-					target->mob.affect[x].master = 0;
-					target->mob.affect[x].value = 0;
-					target->buffer_time[x] = 0;
+			for (size_t i = 0; i < MAX_AFFECT; i++) {
+				if (target->mob.affect[i].index == FM_CONTROLE_MANA) {
+					target->mob.affect[i].index = 0;
+					target->mob.affect[i].time = 0;
+					target->mob.affect[i].master = 0;
+					target->mob.affect[i].value = 0;
+					target->buffer_time[i] = 0;
 				}
 			}
 			damage -= target->mob.status.current_mp;
@@ -766,7 +765,7 @@ CM_CONT:
 		} else {
 			target->mob.status.current_mp = target->mob.status.current_mp - damage;
 			
-			send_grid_multicast(posX, posY, &attack_single, 0);
+			send_grid_multicast(posX, posY, (unsigned char*) &attack_single, 0);
 			get_current_score(target_index);
 			send_score(target_index);
 			
@@ -781,7 +780,7 @@ CM_CONT:
 		short posX = target->mob.current.X;
 		short posY = target->mob.current.Y;
 		
-		send_grid_multicast(posX, posY, &attack_single, 0);
+		send_grid_multicast(posX, posY, (unsigned char*) &attack_single, 0);
 		
 		if (hp <= 0) {
 			if (target_index <= MAX_USERS_PER_CHANNEL) {
@@ -846,6 +845,7 @@ CM_CONT:
 						return;
 
 					g_mobs[attacker->summoner].mob.experience += get_exp_by_kill(target->mob.experience, attacker->summoner, target_index);
+
 					send_mob_dead(attacker->summoner, target_index);
 					send_affects(attacker->summoner);
 					level_up(&g_mobs[attacker->summoner]);
