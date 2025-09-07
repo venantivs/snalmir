@@ -16,6 +16,7 @@
 #include "mob.h"
 #include "base_functions.h"
 #include "world.h"
+#include "item_effect.h"
 
 bool
 request_return_char_list(int user_index) {
@@ -57,6 +58,50 @@ request_return_char_list(int user_index) {
 	clear_property(mob);
 
 	return true;
+}
+
+bool
+request_process_npc(struct packet_request_npc *request_npc, int user_index)
+{
+	struct mob_server_st *user = &g_mobs[user_index];
+	struct mob_server_st *npc_mob = &g_mobs[request_npc->npc_index];
+
+	if (request_npc->npc_index < BASE_MOB || request_npc->npc_index >= MAX_SPAWN_LIST)
+		return true;
+
+	double range = get_distance(user->mob.current, npc_mob->mob.current);
+
+	if (range > 25)
+		return true;
+
+	int grade = get_item_ability(&npc_mob->mob.equip[0], EF_GRADE0);
+
+	if (request_npc->click_ok == 1) {
+		fprintf(stderr, "T=1 NPC NÃO IMPLEMENTADO: %s | merch: %d | grade: %d.\n", npc_mob->mob.name, npc_mob->mob.info.merchant, grade);
+		return true;
+	} else {
+		switch(npc_mob->mob.info.merchant) {
+		case 74:
+			return true;
+		case 12:
+			return true;
+		case 14:
+			return true;
+		case 36:
+			return true;
+		case 40:
+			return true;
+		case 41:
+			return true;
+		case 58:
+			return true;
+		case 4:
+			return true;
+		default:
+			fprintf(stderr, "T=2 NPC NÃO IMPLEMENTADO: %s | merch: %d | grade: %d.\n", npc_mob->mob.name, npc_mob->mob.info.merchant, grade);
+			return true;
+		}
+	}
 }
 
 bool

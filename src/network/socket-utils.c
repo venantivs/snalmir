@@ -311,7 +311,7 @@ send_all_packets(int user_index)
 	flag = 0;
 	setsockopt(g_users[user_index].server_data.socket_fd, IPPROTO_TCP, TCP_NODELAY, (char *) &flag, sizeof(int));
 
-	printf("sent_bytes: %d\n", sent_bytes);
+	// printf("sent_bytes: %d\n", sent_bytes);
 
 	if (sent_bytes >= 0)
 		buffer->sent_position += sent_bytes;

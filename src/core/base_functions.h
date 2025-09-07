@@ -44,6 +44,8 @@ void send_remove_mob(int mob_index, int to_remove_index, int delete_type);
 void send_grid_multicast(struct position_st position, unsigned char *packet, int index);
 void send_grid_multicast_with_packet(int mob_index, struct position_st position, unsigned char *packet);
 void send_teleport(int mob_index, struct position_st destination);
+void send_chat(int mob_index, const char *message);
+void send_refresh_inventory(int user_index);
 void send_create_item(int user_index, short inventory_type, short inventory_slot, struct item_st *item);
 void send_attack(int attacker_index, int target_index);
 void send_env_effect(struct position_st min, struct position_st max, short effect_id, short time);

@@ -210,6 +210,23 @@ struct packet_attack_single
 	struct target_st target;
 };
 
+// 28BH
+struct packet_request_npc
+{
+	struct packet_header header;
+	unsigned short npc_index;
+	unsigned char unknown1;
+	unsigned char unknown2;
+	short click_ok;
+};
+
+// 338H
+struct packet_mob_chat_message
+{
+	struct packet_header header;
+	char message[96];
+};
+
 // 338H
 struct packet_dead_mob
 {
@@ -237,6 +254,14 @@ struct packet_create_item
 	short inventory_type;
 	short inventory_slot;
 	struct item_st item;
+};
+
+// 185H
+struct packet_refresh_inventory
+{
+	struct packet_header header;
+	struct item_st inventory[64];
+	int gold;
 };
 
 // 3B9H

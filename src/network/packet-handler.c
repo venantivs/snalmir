@@ -14,6 +14,7 @@
 #include "server.h"
 #include "packet-def.h"
 #include "packet-handler.h"
+#include "../core/utils.h"
 #include "../core/client_packets.h"
 
 bool
@@ -42,7 +43,7 @@ segregate_packet(unsigned char *packet, int user_index)
 		if (!login_user(login_request, user_index))
 			return false;
 
-		g_users[user_index].server_data.last_recv_time = clock() + 110; /* ??? */
+		g_users[user_index].server_data.last_recv_time = get_clock() + 110; /* ??? */
 
 		return true;
 	}
@@ -70,6 +71,8 @@ segregate_packet(unsigned char *packet, int user_index)
 		return enter_world((struct packet_request_enter_world *) header, user_index);
 	case 0x215:
 		return request_return_char_list(user_index);
+	case 0x28B:
+		return request_process_npc((struct packet_request_npc *) header, user_index);
 	case 0x291:
 		return request_update_city((struct packet_request_change_city *) header, user_index);
 	case 0x334:

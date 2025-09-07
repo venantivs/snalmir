@@ -13,6 +13,7 @@
 #include <time.h>
 
 #include "../network/server.h"
+#include "../network/socket-utils.h"
 #include "npc.h"
 #include "mob.h"
 #include "world.h"
@@ -81,7 +82,7 @@ read_npc_generator()
     if (index != -1) {
       struct npcgener_st *npc_mob = &g_gener_list[index];
 
-      if (strcmp(cmd, "Mob") == 0) {
+      if (strcmp(cmd, "Leader") == 0) {
         load_npc(val, index);
       } else {
         int value = atoi(val);
@@ -238,7 +239,8 @@ spawn_mobs()
           break;
 
         if (!update_world(index, &npc_mob->start.position, WORLD_MOB)) {
-          fatal_error("Erro ao executar #update_world.\n");
+          printf("%d\n", index);
+          // fatal_error("Erro ao executar #update_world.\n");
           continue;
         }
 
@@ -248,7 +250,7 @@ spawn_mobs()
 
         current_mob->mode = MOB_IDLE;
         current_mob->mob.client_index = index;
-        current_mob->next_action = (clock() + 800);
+        current_mob->next_action = (get_clock() + 800);
         current_mob->spawn_type = SPAWN_TELEPORT;
         current_mob->generate_index = i;
         current_mob->mob.last_position = npc_mob->start.position;
@@ -297,7 +299,7 @@ action_mob(int sec_counter)
 	for (size_t i = (BASE_MOB + 1); i <= spawn_count; i++) {
     struct mob_server_st *mob = &g_mobs[i];
 
-    clock_t opa = clock();
+    clock_t opa = get_clock();
 		if (is_dead(*mob)) {
       continue;
     } else if (opa > mob->next_action) {
@@ -332,4 +334,180 @@ action_mob(int sec_counter)
 		if (mob->mob.status.merchant == 0)
 			processor_sec_timer_mob(mob, sec_counter);
 	}
+}
+
+void
+first_trainer(int user_index, int npc_index)
+{
+  struct mob_server_st *mob = &g_mobs[user_index];
+  if (mob->mob.b_status.level > 34) {
+    send_chat(npc_index, "Seu nivel e inadequado para esta area.");
+    return;
+  }
+
+  if ((mob->mob.quest_info & (1 << (QUEST_C_ARMIA_1))) != 0) {
+    send_chat(npc_index, "Voce ja completou essa quest!");
+    return;
+  }
+
+  if (mob->mob.class_master != CLASS_MORTAL) {
+    send_chat(npc_index, "Somente personagens mortais podem participar desta quest.");
+    return;
+  }
+
+  int slot = get_item_slot(user_index, 451, INV_TYPE);
+  if (slot < 0 || slot > 63) {
+    send_chat(npc_index, "Traga-me a chave da primeira porta.");
+    return;
+  }
+
+  struct item_st prize = { 0 };
+  prize.item_id = 428;
+  prize.effect[0].index = 61;
+  prize.effect[0].value = 120;
+  memcpy(&mob->mob.inventory[slot], &prize, sizeof(struct item_st));
+
+  mob->mob.quest_info |= 1 << QUEST_C_ARMIA_1;
+
+  send_refresh_inventory(user_index);
+  send_all_packets(user_index);
+}
+
+void
+second_trainer(int user_index, int npc_index)
+{
+  struct mob_server_st *user = &g_mobs[user_index];
+  if (user->mob.b_status.level > 34) {
+    send_chat(npc_index, "Seu nivel e inadequado para esta area.");
+    return;
+  }
+
+  if (user->mob.class_master != CLASS_MORTAL) {
+    send_chat(npc_index, "Somente para mortais.");
+    return;
+  }
+
+  short slot = get_item_slot(user_index, 452, INV_TYPE);
+  if (slot < 0 || slot > 62) {
+    send_chat(npc_index, "Traga-me a chave da segunda porta.");
+    return;
+  }
+
+  if ((user->mob.quest_info & (1 << QUEST_C_ARMIA_2)) != 0) {
+    send_chat(npc_index, "Voce ja completou esta quest!");
+    return;
+  }
+
+  short _num = abs(rand()) % 3;
+  short _ref = abs(rand()) % 6;
+
+  int add[] = { 26, 54, 74 };
+  int val[] = { 36, 8, 32 };
+
+  if (user->mob.equip[6].item_id > 0) {
+    user->mob.equip[6].effect[0].index = 43;
+    user->mob.equip[6].effect[0].value = _ref;
+    user->mob.equip[6].effect[1].index = add[_num];
+    user->mob.equip[6].effect[1].value = val[_num];
+
+    send_create_item(user_index, EQUIP_TYPE, 6, &user->mob.equip[6]);
+    memset(&user->mob.inventory[slot], 0, sizeof(struct item_st));
+
+    user->mob.quest_info |= 1 << QUEST_C_ARMIA_2;
+
+    send_refresh_inventory(user_index);
+    send_chat(npc_index, "Sua arma foi aprimorada, parabens bravo guerreiro.");
+    send_all_packets(user_index);
+    return;
+  }
+
+  send_chat(npc_index, "Sua arma nao esta equipada!");
+}
+
+void
+third_trainer(int user_index, int npc_index)
+{
+  struct mob_server_st *user = &g_mobs[user_index];
+
+  if (user->mob.b_status.level > 34) {
+    send_chat(npc_index, "Seu nivel e inadequado para esta area.");
+    return;
+  }
+
+  if (user->mob.class_master != CLASS_MORTAL) {
+    send_chat(npc_index, "Somente para mortais.");
+    return;
+  }
+
+  short slot = get_item_slot(user_index, 453, INV_TYPE);
+  if (slot < 0 || slot > 62) {
+    send_chat(npc_index, "Traga-me a chave da segunda porta.");
+    return;
+  }
+
+  if ((user->mob.quest_info & (1 << QUEST_C_ARMIA_3)) != 0) {
+    send_chat(npc_index, "Voce ja completou esta quest!");
+    return;
+  }
+
+  memset(&user->mob.inventory[slot], 0, sizeof(struct item_st));
+  for (size_t i = 0; i < 5; i++) {
+    short free_slot = get_item_slot(user_index, 0, INV_TYPE);
+    user->mob.inventory[free_slot].item_id = 4016;
+  }
+
+  user->mob.quest_info |= 1 << QUEST_C_ARMIA_3;
+  send_refresh_inventory(user_index);
+  send_chat(npc_index, "Faca bom uso destes itens.");
+  send_all_packets(user_index);
+}
+
+void
+mortal_quests(int user_index, int npc_index)
+{
+  if (user_index < 0 || user_index > MAX_USERS_PER_CHANNEL)
+    return;
+
+  if (npc_index < BASE_MOB || npc_index > MAX_SPAWN_LIST)
+    return;
+
+  struct mob_server_st *user_mob = &g_mobs[user_index];
+  // struct mob_server_st *npc_mob = &g_mobs[npc_index];
+
+  if (user_mob->mob.class_master != CLASS_MORTAL) {
+    send_chat(npc_index, "Somente mortais!");
+    return;
+  }
+
+  if (user_mob->mob.b_status.level > 59 && user_mob->mob.b_status.level < 115) {
+    send_teleport(user_index, (struct position_st) { 2398, 2104 });
+    send_client_message("Bem vindo a quest Nv.[60~115]", user_index);
+    return;
+  }
+
+  if (user_mob->mob.b_status.level >= 115 && user_mob->mob.b_status.level < 190) {
+    send_teleport(user_index, (struct position_st) { 2237, 1713 });
+    send_client_message("Bem vindo a quest Nv.[116~190]", user_index);
+    return;
+  }
+
+  if (user_mob->mob.b_status.level >= 190 && user_mob->mob.b_status.level < 265) {
+    send_teleport(user_index, (struct position_st) { 467, 3901 });
+    send_client_message("Bem vindo a quest Nv.[191~265]", user_index);
+    return;
+  }
+
+  if (user_mob->mob.b_status.level >= 265 && user_mob->mob.b_status.level < 320) {
+    send_teleport(user_index, (struct position_st) { 668, 3755 });
+    send_client_message("Bem vindo a quest Nv.[266~320]", user_index);
+    return;
+  }
+
+  if (user_mob->mob.b_status.level >= 320 && user_mob->mob.b_status.level < 399) {
+    send_teleport(user_index, (struct position_st) { 1325, 4042 });
+    send_client_message("Bem vindo a quest Nv.[321~399]", user_index);
+    return;
+  }
+
+  send_client_message("Voce nao possui mais quests.", user_index);
 }

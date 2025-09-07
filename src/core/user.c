@@ -67,7 +67,7 @@ load_account(const char *user, const char *password, struct account_file_st *acc
 	user_account = fopen(file_path, "rb");
 
 	if (user_account == NULL)
-		return false; // INSERT_ACCOUNT ????
+		return false;
 
 	fread(account, sizeof(struct account_file_st), 1, user_account);
 

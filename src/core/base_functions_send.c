@@ -466,6 +466,36 @@ send_teleport(int mob_index, struct position_st destination)
 	get_action(mob_index, destination, MOVE_TELEPORT, NULL);
 }
 
+void
+send_chat(int mob_index, const char *message)
+{
+	struct packet_mob_chat_message mob_chat_message = { 0 };
+	mob_chat_message.header.size = sizeof(struct packet_mob_chat_message);
+	mob_chat_message.header.operation_code = 0x333;
+	mob_chat_message.header.index = mob_index;
+
+	strncpy(mob_chat_message.message, message, sizeof(mob_chat_message.message));
+
+	send_grid_multicast(g_mobs[mob_index].mob.current, (unsigned char *) &mob_chat_message, mob_index);
+}
+
+void
+send_refresh_inventory(int user_index)
+{
+	if (user_index <= 0 || user_index >= MAX_USERS_PER_CHANNEL)
+		return;
+
+	struct packet_refresh_inventory inventory = { 0 };
+	inventory.header.size = sizeof(struct packet_refresh_inventory);
+	inventory.header.operation_code = 0x185;
+	inventory.header.index = user_index;
+
+	memcpy(&inventory.inventory, &g_mobs[user_index].mob.inventory, sizeof(inventory.inventory));
+	inventory.gold = g_mobs[user_index].mob.gold;
+
+	add_client_packet((unsigned char *) &inventory, xlen(&inventory), user_index);
+}
+
 short
 get_damage(short damage, short defense, unsigned char master)
 {

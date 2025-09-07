@@ -82,7 +82,7 @@ load_init_items()
     if (read_fields < 4) continue;
 
     g_init_list[init_index].item_index = init_index;
-    g_init_list[init_index].drop_time = clock();
+    g_init_list[init_index].drop_time = get_clock();
     g_init_list[init_index].owner_id = 0x7530; // ??????
     g_init_list[init_index].status = 3; // ????
 

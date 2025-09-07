@@ -1,7 +1,7 @@
 MAKEFLAGS += --silent
 
 TARGET = snalmir
-LIBS = -lpthread -lm
+LIBS = -lpthread -lm -lrt
 CC = gcc
 CFLAGS = -Wall
 

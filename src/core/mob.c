@@ -256,10 +256,11 @@ refresh_enemy(struct mob_server_st *mob)
 	for (size_t i = 0; i < MAX_ENEMY; ++i) {
 		if (mob->enemy_list[i] > 0) {
 			if ((is_summon(*mob) && (mob->enemy_list[i] < MAX_USERS_PER_CHANNEL)) || (is_summon(*mob) && is_summon(g_mobs[mob->enemy_list[i]]))) {
-				if (check_pvp_area(mob->enemy_list[i]) == 0) remove_enemy_list(mob, mob->enemy_list[i]);
-				else if (check_pvp_area(mob->mob.client_index) == 0) remove_enemy_list(mob, mob->enemy_list[i]);
-			}
-			else if (is_dead(g_mobs[mob->enemy_list[i]]))
+				if (check_pvp_area(mob->enemy_list[i]) == 0)
+					remove_enemy_list(mob, mob->enemy_list[i]);
+				else if (check_pvp_area(mob->mob.client_index) == 0)
+					remove_enemy_list(mob, mob->enemy_list[i]);
+			} else if (is_dead(g_mobs[mob->enemy_list[i]]))
 				remove_enemy_list(mob, mob->enemy_list[i]);
 			else if (is_summon(*mob) && mob->enemy_list[i] == mob->summoner)
 				remove_enemy_list(mob, mob->enemy_list[i]);
@@ -609,12 +610,12 @@ standby_processor(struct mob_server_st *mob)
 
 				if (select_target_from_enemy_list(mob)) {
 					mob->mode = MOB_COMBAT;
-					mob->next_action = clock() + 1000 + abs(rand() % 1000);
+					mob->next_action = get_clock() + 1000 + abs(rand() % 1000);
 					return ACTION_BATTLE;
 				}
 			} else {
 				mob->mode = MOB_COMBAT;
-				mob->next_action = clock() + 1000 + abs(rand() % 1000);
+				mob->next_action = get_clock() + 1000 + abs(rand() % 1000);
 				return ACTION_BATTLE;
 			}
 		}
@@ -623,7 +624,7 @@ standby_processor(struct mob_server_st *mob)
 
 		if (select_target_from_enemy_list(mob)) {
 			mob->mode = MOB_COMBAT;
-			mob->next_action = clock() + 1000 + abs(rand() % 1000);
+			mob->next_action = get_clock() + 1000 + abs(rand() % 1000);
 			return ACTION_BATTLE;
 		}
 	}
@@ -637,7 +638,7 @@ standby_processor(struct mob_server_st *mob)
 			if (select_target_from_enemy_list(mob)) {
 				ret_action = ACTION_BATTLE;
 				mob->mode = MOB_COMBAT;
-				mob->next_action = clock() + 1000 + abs(rand() % 1000);
+				mob->next_action = get_clock() + 1000 + abs(rand() % 1000);
 				break;
 			} else {
 				refresh_enemy(mob);
@@ -649,15 +650,13 @@ standby_processor(struct mob_server_st *mob)
 		if (mob->next >= 13 || distance > 5) {
 			ret_action = ACTION_MOVE_RAND;
 			mob->next = 0;
-			mob->next_action = clock() + 3000 + abs(rand() % 7000);
+			mob->next_action = get_clock() + 3000 + abs(rand() % 7000);
 			mob->mode = MOB_IDLE;
-			break;
 		} else {
 			ret_action = ACTION_MOVE;
 			mob->next++;
-			mob->next_action = clock() + 3000 + abs(rand() % 7000);
+			mob->next_action = get_clock() + 3000 + abs(rand() % 7000);
 			mob->mode = MOB_IDLE;
-			break;
 		}
 		break;
 
@@ -667,13 +666,13 @@ standby_processor(struct mob_server_st *mob)
 		if (mob->next >= 13 || distance > 5) {
 			ret_action = ACTION_MOVE_RAND;
 			mob->next = 0;
-			mob->next_action = clock() + 3000 + abs(rand() % 7000);
+			mob->next_action = get_clock() + 3000 + abs(rand() % 7000);
 			mob->mode = MOB_IDLE;
 			break;
 		} else {
 			ret_action = ACTION_MOVE;
 			mob->next++;
-			mob->next_action = clock() + 3000 + abs(rand() % 7000);
+			mob->next_action = get_clock() + 3000 + abs(rand() % 7000);
 			mob->mode = MOB_IDLE;
 			break;
 		}
@@ -686,7 +685,7 @@ standby_processor(struct mob_server_st *mob)
 			if (select_target_from_enemy_list(mob)) {
 				ret_action = ACTION_BATTLE;
 				mob->mode = MOB_COMBAT;
-				mob->next_action = clock() + 1000 + abs(rand() % 1000);
+				mob->next_action = get_clock() + 1000 + abs(rand() % 1000);
 				break;
 			} else {
 				refresh_enemy(mob);
@@ -698,13 +697,13 @@ standby_processor(struct mob_server_st *mob)
 		if (mob->next >= 13 || distance > 5) {
 			ret_action = ACTION_MOVE_RAND;
 			mob->next = 0;
-			mob->next_action = clock() + 3000 + abs(rand() % 7000);
+			mob->next_action = get_clock() + 3000 + abs(rand() % 7000);
 			mob->mode = MOB_IDLE;
 			break;
 		} else {
 			ret_action = ACTION_MOVE;
 			mob->next++;
-			mob->next_action = clock() + 3000 + abs(rand() % 7000);
+			mob->next_action = get_clock() + 3000 + abs(rand() % 7000);
 			mob->mode = MOB_IDLE;
 			break;
 		}
@@ -721,7 +720,7 @@ standby_processor(struct mob_server_st *mob)
 
 		if (distance > 14) {
 			ret_action = ACTION_MOVE_TO_SUMMONER;
-			mob->next_action = clock() + 2000 + abs(rand() % 2000);
+			mob->next_action = get_clock() + 2000 + abs(rand() % 2000);
 			mob->mode = MOB_IDLE;
 			break;
 		} else {
@@ -731,13 +730,13 @@ standby_processor(struct mob_server_st *mob)
 					if (select_target_from_enemy_list(mob)) {
 						ret_action = ACTION_BATTLE;
 						mob->mode = MOB_COMBAT;
-						mob->next_action = clock() + 1000 + abs(rand() % 1000);
+						mob->next_action = get_clock() + 1000 + abs(rand() % 1000);
 						break;
 					}
 				} else {
 					ret_action = ACTION_BATTLE;
 					mob->mode = MOB_COMBAT;
-					mob->next_action = clock() + 1000 + abs(rand() % 1000);
+					mob->next_action = get_clock() + 1000 + abs(rand() % 1000);
 					break;
 				}
 			}
@@ -747,7 +746,7 @@ standby_processor(struct mob_server_st *mob)
 			if (select_target_from_enemy_list(mob)) {
 				ret_action = ACTION_BATTLE;
 				mob->mode = MOB_COMBAT;
-				mob->next_action = clock() + 1000 + abs(rand() % 1000);
+				mob->next_action = get_clock() + 1000 + abs(rand() % 1000);
 				break;
 			}
 
@@ -757,13 +756,13 @@ standby_processor(struct mob_server_st *mob)
 				if (select_target_from_enemy_list(mob)) {
 					ret_action = ACTION_BATTLE;
 					mob->mode = MOB_COMBAT;
-					mob->next_action = clock() + 1000 + abs(rand() % 1000);
+					mob->next_action = get_clock() + 1000 + abs(rand() % 1000);
 					break;
 				} else
 					refresh_enemy(mob);
 			} else {
 				ret_action = ACTION_MOVE_RAND;
-				mob->next_action = clock() + 3000 + abs(rand() % 7000);
+				mob->next_action = get_clock() + 3000 + abs(rand() % 7000);
 				mob->mode = MOB_IDLE;
 				break;
 			}
@@ -777,7 +776,7 @@ standby_processor(struct mob_server_st *mob)
 				if (select_target_from_enemy_list(mob)) {
 					ret_action = ACTION_BATTLE;
 					mob->mode = MOB_COMBAT;
-					mob->next_action = clock() + 1000 + abs(rand() % 1000);
+					mob->next_action = get_clock() + 1000 + abs(rand() % 1000);
 					break;
 				} else {
 					refresh_enemy(mob);
@@ -789,7 +788,7 @@ standby_processor(struct mob_server_st *mob)
 				if (select_target_from_enemy_list(mob)) {
 					ret_action = ACTION_BATTLE;
 					mob->mode = MOB_COMBAT;
-					mob->next_action = clock() + 1000 + abs(rand() % 1000);
+					mob->next_action = get_clock() + 1000 + abs(rand() % 1000);
 					break;
 				} else {
 					refresh_enemy(mob);
@@ -802,13 +801,13 @@ standby_processor(struct mob_server_st *mob)
 		if (mob->next >= 13 || distance > 5) {
 			ret_action = ACTION_MOVE_RAND;
 			mob->next = 0;
-			mob->next_action = clock() + 3000 + abs(rand() % 7000);
+			mob->next_action = get_clock() + 3000 + abs(rand() % 7000);
 			mob->mode = MOB_IDLE;
 			break;
 		} else {
 			ret_action = ACTION_MOVE;
 			mob->next++;
-			mob->next_action = clock() + 3000 + abs(rand() % 7000);
+			mob->next_action = get_clock() + 3000 + abs(rand() % 7000);
 			mob->mode = MOB_IDLE;
 			break;
 		}
@@ -820,7 +819,7 @@ standby_processor(struct mob_server_st *mob)
 			if (select_target_from_enemy_list(mob)) {
 				ret_action = ACTION_BATTLE;
 				mob->mode = MOB_COMBAT;
-				mob->next_action = clock() + 1000 + abs(rand() % 1000);
+				mob->next_action = get_clock() + 1000 + abs(rand() % 1000);
 				break;
 			} else {
 				refresh_enemy(mob);
@@ -832,18 +831,17 @@ standby_processor(struct mob_server_st *mob)
 		if (mob->next >= 13 || distance > 5) {
 			ret_action = ACTION_MOVE_RAND;
 			mob->next = 0;
-			mob->next_action = clock() + 3000 + abs(rand() % 7000);
+			mob->next_action = get_clock() + 3000 + abs(rand() % 7000);
 			mob->mode = MOB_IDLE;
-			break;
 		} else {
 			ret_action = ACTION_MOVE;
 			mob->next++;
-			mob->next_action = clock() + 3000 + abs(rand() % 7000);
+			mob->next_action = get_clock() + 3000 + abs(rand() % 7000);
 			mob->mode = MOB_IDLE;
-			break;
 		}
 		break;
 	}
+
 	return ret_action;
 }
 
