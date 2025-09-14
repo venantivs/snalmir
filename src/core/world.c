@@ -366,8 +366,9 @@ remove_object(int mob_index, struct position_st position, int flag)
 
 		g_item_grid[position.Y][position.X] = 0;
 		return true;
-	} else
-		return false;
+	} else {
+    return false;
+  }
 
 	return false;
 }

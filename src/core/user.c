@@ -515,7 +515,7 @@ save_client(int user_index)
 		account->profile.gold = user.gold;
 		account->profile.cash = user.cash;
 
-		memcpy(account->profile.cargo, user.storage, sizeof(account->profile.cargo));
+		memcpy(account->profile.cargo, user.storage, 128 * sizeof(struct item_st));
 		save_account(user_index);
 	}
 }
@@ -537,11 +537,14 @@ save_character(int user_index, int flag)
 			// TODO: SUBCELE, IMPLEMENTAR
 		}
 
+		/* Sem isso mob_account[slot].name fica vazio se chamado após clear_property (return to char list). Ao tentar reentrar vai dar erro. */
+		if (character->name[0] == '\0')
+			return;
+
 		memcpy(&account->mob_account[character->slot_index], character, sizeof(struct mob_st));
 
-		if (flag == 1) {
+		if (flag == 1)
 			save_mob(character->slot_index, false, user_index);
-		}
 	}
 }
 
