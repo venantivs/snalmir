@@ -69,6 +69,8 @@ segregate_packet(unsigned char *packet, int user_index)
 		return delete_char((struct packet_request_delete_char *) header, user_index);
 	case 0x213:
 		return enter_world((struct packet_request_enter_world *) header, user_index);
+	case 0x277:
+		return request_add_points((struct packet_request_add_points *) header, user_index);
 	case 0x215:
 		return request_return_char_list(user_index);
 	case 0x376:

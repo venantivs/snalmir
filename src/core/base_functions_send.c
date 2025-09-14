@@ -139,42 +139,42 @@ send_score(short index)
 	refresh_score.header.operation_code = 0x336;
 	refresh_score.header.index = index;
 
-  struct mob_server_st user = g_mobs[index];
+  struct mob_server_st *user = &g_mobs[index];
 
 	if (index < MAX_USERS_PER_CHANNEL) {
-		refresh_score.current_hp = user.mob.status.current_hp;
-		refresh_score.current_mp = user.mob.status.current_mp;
+		refresh_score.current_hp = user->mob.status.current_hp;
+		refresh_score.current_mp = user->mob.status.current_mp;
 	}
 
 	refresh_score.critical = g_mobs[index].mob.critical;
 	refresh_score.save_mana = g_mobs[index].mob.save_mana;
 
-	if (user.guild_disable == 0) {
-		refresh_score.guild_index = user.mob.guild_id;
-		refresh_score.guild_member_type = user.mob.guild_member_type * 0x40;
+	if (user->guild_disable == 0) {
+		refresh_score.guild_index = user->mob.guild_id;
+		refresh_score.guild_member_type = user->mob.guild_member_type * 0x40;
 	} else {
 		refresh_score.guild_index = 0;
 		refresh_score.guild_member_type = 0;
 	}
 
-	refresh_score.resist_1 = user.mob.resist[0];
-	refresh_score.resist_2 = user.mob.resist[1];
-	refresh_score.resist_3 = user.mob.resist[2];
-	refresh_score.resist_4 = user.mob.resist[3];
-	refresh_score.regen_hp = user.mob.regen_hp;
-	refresh_score.regen_mp = user.mob.regen_mp;
+	refresh_score.resist_1 = user->mob.resist[0];
+	refresh_score.resist_2 = user->mob.resist[1];
+	refresh_score.resist_3 = user->mob.resist[2];
+	refresh_score.resist_4 = user->mob.resist[3];
+	refresh_score.regen_hp = user->mob.regen_hp;
+	refresh_score.regen_mp = user->mob.regen_mp;
 
-	int m = user.mob.magic_increment;
+	int m = user->mob.magic_increment;
 	if (m >= 255)
 		m = 254;
 
 	refresh_score.magic_increment = m;
-	refresh_score.status = user.mob.status;
+	refresh_score.status = user->mob.status;
 
   memset(&refresh_score.special, 0x0, 4);
 	uintptr_t affect_index = (uintptr_t) ((uintptr_t) refresh_score.affect - (uintptr_t) &refresh_score); // Calcula a posição (em bytes) do affect no packet
-  get_affect(affect_index, user.mob.affect, (unsigned char*) &refresh_score);
-	send_grid_multicast(user.mob.current, (unsigned char*) &refresh_score, 0); // Envia para todos os Indexes
+  get_affect(affect_index, user->mob.affect, (unsigned char*) &refresh_score);
+	send_grid_multicast(user->mob.current, (unsigned char*) &refresh_score, 0); // Envia para todos os Indexes
 }
 
 void 

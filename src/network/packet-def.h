@@ -288,6 +288,15 @@ struct packet_request_move_item
 	int unknown;
 };
 
+// 277H
+struct packet_request_add_points
+{
+	struct packet_header header;
+	short mode;
+	short info;
+	int unknown;
+};
+
 // 338H
 struct packet_dead_mob
 {

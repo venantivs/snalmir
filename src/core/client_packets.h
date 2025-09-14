@@ -5,6 +5,7 @@
 
 #include "../network/packet-def.h"
 
+bool request_add_points(struct packet_request_add_points *request_add_points, int user_index);
 bool request_update_city(struct packet_request_change_city *request_change_city, int user_index);
 bool request_logout_char(int user_index);
 bool request_return_char_list(int user_index);

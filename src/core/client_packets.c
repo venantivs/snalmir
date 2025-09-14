@@ -19,8 +19,132 @@
 #include "world.h"
 #include "item_effect.h"
 #include "game_skills.h"
+#include "game_items.h"
 #include "utils.h"
 #include "npc.h"
+
+bool
+request_add_points(struct packet_request_add_points *request_add_points, int user_index)
+{
+	int max;
+	short *info;
+	unsigned char *master;
+	struct mob_st *user = &g_mobs[user_index].mob;
+
+	switch (request_add_points->mode) {
+	case 0:
+		if (user->p_status <= 0)
+			break;
+
+		info = (short*) ((char*) &user->b_status.strength + (sizeof(short) * request_add_points->info));
+		if (*info >= 32000) {
+			send_client_message("Maximo de pontos e 32.000", user_index);
+			break;
+		}
+
+		if (user->p_status >= 200) {
+			(*info) += 100;
+			user->p_status -= 100;
+		} else {
+			(*info)++;
+			user->p_status--;
+		}
+
+		get_current_score(user_index);
+		send_etc(user_index);
+		send_score(user_index);
+		send_all_packets(user_index);
+
+		break;
+	case 1:
+		if (user->p_master <= 0)
+			break;
+
+		if (user->class_master <= CLASS_ARCH) {
+			if ((user->learn & (128 << (request_add_points->info * 8))) == 0) {
+				max = (((user->b_status.level + 1) * 3) >> 1);
+				if (max > 200)
+					max = 200;
+			} else {
+				max = 255;
+			}
+		} else if (user->class_master >= CLASS_CELESTIAL) {
+			max = 255;
+		}
+
+		master = (unsigned char*) ((char*) &user->b_status.w_master + request_add_points->info);
+		if (*master >= max) {
+			send_client_message("Maximo de pontos neste atributo.", user_index);
+			break;
+		}
+
+		(*master)++;
+		user->p_master--;
+		
+		get_current_score(user_index);
+		send_etc(user_index);
+		send_score(user_index);
+		send_all_packets(user_index);
+
+		break;
+	case 2:
+		if (request_add_points->info < 5000 || request_add_points->info > 5095)
+			break;
+
+		struct item_list_st item = g_item_list[request_add_points->info];
+		struct skill_data_st spell = g_skill_data[request_add_points->info - 5000];
+
+		int skill_index = (request_add_points->info - 5000) % 24;
+		int skill_divisor = skill_index / 8;
+		short reqmaster = spell.points;
+		unsigned char master = *(unsigned char*)(&user->status.f_master + skill_divisor);
+
+		bool success = false;
+		int required_class = get_effect_value(request_add_points->info, EF_CLASS);
+		int class_info = user->class_info;
+		
+		if (((required_class >> class_info) & 1) == 0) {
+			send_client_message("Nao pode aprender skills desta classe!", user_index);
+			return true;
+		}
+
+		if (user->class_master >= CLASS_ARCH){
+			if (master < reqmaster)
+				master = reqmaster;
+		}
+
+		if ((user->learn & (1 << skill_index)) == 0) {
+			if (master >= reqmaster) {
+				if (user->p_skill >= spell.points || user->class_master >= CLASS_CELESTIAL) {
+					if (user->gold >= item.price) {
+						if (user->status.level >= item.level || user->class_master >= CLASS_CELESTIAL) {
+							success = true;
+						} else
+							send_client_message("Nao ha Level suficiente para adquirir a Skill.", user_index);
+					} else
+						send_client_message("Nao ha dinheiro suficiente para adquirir a Skill.", user_index);
+				} else
+					send_client_message("Nao ha Pontos de Skill suficientes.", user_index);
+			} else
+				send_client_message("Nao ha Pontos Masters suficientes.", user_index);
+		} else
+			send_client_message("Voce ja aprendeu essa skill.", user_index);
+
+		if (success) {
+			user->learn |= 1 << skill_index;
+			user->p_skill -= spell.points;
+
+			get_current_score(user_index);
+			send_etc(user_index);
+			send_score(user_index);
+			send_all_packets(user_index);
+		}
+
+		break;
+	}
+
+	return true;
+}
 
 bool
 request_return_char_list(int user_index) {
