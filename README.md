@@ -23,13 +23,18 @@ Por ser um projeto para estudos, o objetivo foi simplificar ao máximo as compli
 - [x] Funcionamento básico do servidor com **epoll**
 - [x] Login
 - [x] Login de Char (Entrar no mundo)
-- [ ] Logout de Char
+- [x] Logout de Char
 - [x] Criação de Char
 - [x] Remoção de Char
 - [ ] Mensagem de Chat
 - [ ] Actions
 - [x] Mover
 - [x] Ataque
+- [x] Pontos de Atributos
+- [ ] Teleports
+- [ ] Quests
+- [ ] Usar Item
+- [ ] NPCs
 - [ ] ...
 
 ## TODOs gerais
@@ -44,7 +49,6 @@ Por ser um projeto para estudos, o objetivo foi simplificar ao máximo as compli
 ```bash
 $ git clone git@github.com:theskytalos/snalmir.git
 $ cd snalmir
-$ mkdir bin
 $ make
 $ sudo ./bin/snalmir
 ```
