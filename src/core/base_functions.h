@@ -39,6 +39,11 @@ unsigned int get_exp_by_kill(unsigned int exp, int attacker_index, int target_in
 int get_item_slot(int user_index, int item_id, int type);
 int get_pk_points(int mob_index);
 void get_hit_position(struct position_st attacker_pos, struct position_st *target_pos);
+struct item_st *get_item_pointer(short user_index, int type, int slot);
+bool can_equip(short class_master, struct item_st *item, struct status_st *score, int slot, int MSGass, struct item_st *equip);
+bool can_carry(struct item_st *destination_item, struct item_st *inventory, int slot, int *error_slot);
+bool can_cargo(struct item_st *destination_item, struct item_st *inventory, int destination_slot, int *error_slot);
+int get_anct_code(struct item_st *item);
 
 // SEND
 void send_grid_mob(int);

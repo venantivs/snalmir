@@ -71,6 +71,8 @@ segregate_packet(unsigned char *packet, int user_index)
 		return enter_world((struct packet_request_enter_world *) header, user_index);
 	case 0x215:
 		return request_return_char_list(user_index);
+	case 0x376:
+		return request_move_item((struct packet_request_move_item *) header, user_index);
 	case 0x28B:
 		return request_process_npc((struct packet_request_npc *) header, user_index);
 	case 0x291:

@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <sys/select.h>
 
 int BaseSIDCHM[4][6] = {
 	{ 8, 4, 7, 6, 80, 45 }, // Transknight
@@ -1078,6 +1079,194 @@ get_empty_slot_affect(int user_index)
 	return -1;
 }
 
+struct item_st *
+get_item_pointer(short user_index, int type, int slot)
+{
+	if (user_index <= 0 || user_index >= MAX_SPAWN_LIST)
+		return NULL;
+
+	switch (type) {
+	case EQUIP_TYPE:
+		if (slot == 0)
+			return NULL;
+
+		if (slot >= 16)
+			return NULL;
+
+		return &g_mobs[user_index].mob.equip[slot];
+	case INV_TYPE:
+		if (slot >= 64)
+			return NULL;
+
+		return &g_mobs[user_index].mob.inventory[slot];
+	case STORAGE_TYPE:
+		if (slot >= 128 || user_index >= FD_SETSIZE)
+			return NULL;
+
+		return &g_users[user_index].storage[slot];
+	default:
+		return NULL;
+	}
+}
+
+bool
+can_equip(short class_master, struct item_st *item, struct status_st *score, int slot, int MSGass, struct item_st *equip)
+{
+	if (item->item_id <= 0 || item->item_id >= MAX_ITEM_LIST)
+		return false;
+
+	// Verifica se o client esta tentando trocar a capa
+	if (slot == 15 || slot == 12)
+		return false;
+
+	// ARCH, CELE, SUBCELE não podem remover tiara
+	if (class_master > CLASS_MORTAL && slot == HELM_SLOT)
+		return false;
+
+	short item_unique = g_item_list[item->item_id].unique;
+	if (slot != -1) {
+		short item_position = get_item_ability(item, EF_POS);
+		// Verifica se pode mover o item para este slot
+		if (((item_position >> slot) & 1) == 0)
+			return false;
+
+		// Slot das armas/escudos
+		if (slot == 6 || slot == 7) { 
+			int source_slot;
+			if (slot == 6)
+				source_slot = 7;
+			else // slot = 7
+				source_slot = 6;
+
+			short source_item_id = equip[source_slot].item_id;
+			// Verifica o id da outra arma
+			if (source_item_id > 0 && source_item_id < MAX_ITEM_LIST) { 
+				short source_unique = g_item_list[source_item_id].unique;
+				short source_position = get_item_ability(&equip[source_slot], EF_POS);
+
+				// Verifica se a arma usada eh de 2 maos
+				if (item_position == 64 || source_position == 64) { 
+					// Armas de arremeco
+					if (item_unique == 46) {
+						// A segunda arma esta a mao do escudo 
+						if (source_position != 128)
+							return false;
+
+					} else if (source_unique == 46) { // Armas de arremeco
+						// A segunda arma esta a mao do escudo
+						if (item_position != 128)
+							return false;
+
+					} else { // Outros tipos de armas
+						return false;
+					}
+				}
+			}
+		}
+	}
+
+	if (class_master == CLASS_MORTAL) {
+		short item_class = get_effect_value(item->item_id, EF_CLASS);
+		// Classe incompativel
+		if (((item_class >> MSGass) & 1) == 0)
+			return false; 
+	} else {
+		short item_class = get_effect_value(item->item_id, EF_CLASS);
+		short class = (equip[0].item_id / 10);
+		if (((item_class >> class) & 1) == 0)
+			return false; // Classe incompativel
+	}
+
+	// Dados do requerimento
+	short item_required_level = get_item_ability(item, EF_LEVEL);
+	short item_required_strength = get_item_ability(item, EF_REQ_STR);
+	short item_required_intelligence = get_item_ability(item, EF_REQ_INT);
+	short item_required_dexterity = get_item_ability(item, EF_REQ_DEX);
+	short item_required_constitution = get_item_ability(item, EF_REQ_CON);
+	short item_type = get_item_ability(item, EF_WTYPE);
+
+	item_type %= 10;
+	int divider_item_by_type = (item_type / 10);
+
+	if (slot == 7 && item_type != 0) {
+		int percent = 100;
+		if (divider_item_by_type == 0 && item_type > 1)
+			percent = 130;
+		else if (divider_item_by_type == 6 && item_type > 1)
+			percent = 150;
+
+		item_required_level = ((item_required_level * percent) / 100);
+		item_required_strength = ((item_required_strength * percent) / 100);
+		item_required_intelligence = ((item_required_intelligence * percent) / 100);
+		item_required_dexterity = ((item_required_dexterity * percent) / 100);
+		item_required_constitution = ((item_required_constitution * percent) / 100);
+	}
+
+	bool is_arch = is_arch_item(item->item_id);
+	bool is_hardcore = is_hardcore_item(item->item_id);
+
+	// Verificacao dos atributos do personagem
+	if (item_required_strength <= score->strength && item_required_intelligence <= score->intelligence && item_required_dexterity <= score->dexterity && item_required_constitution <= score->constitution && item_required_level <= score->level) {
+		if (is_arch == true) {
+			if (class_master >= CLASS_ARCH)
+				return true;
+		}
+
+		if (is_hardcore == true) {
+			if (class_master >= CLASS_SUB_CELESTIAL)
+				return true;
+		} else {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool
+can_carry(struct item_st *destination_item, struct item_st *inventory, int slot, int *error_slot)
+{
+	if (slot > 59)
+		return false;
+
+	if (inventory[slot].item_id != 0)
+		return false;
+
+	if (destination_item->item_id == 0)
+		return false;
+
+	bool backpack_1 = false;
+	bool backpack_2 = false;
+	
+	if (inventory[60].item_id == 3467)
+		backpack_1 = true;
+	
+	if (inventory[61].item_id == 3467)
+		backpack_2 = true;
+
+	if ((slot >= 30 && slot <= 44) && !backpack_1)
+			return false;
+
+	if ((slot >= 45 && slot <= 59) && !backpack_2)
+			return false;
+
+	return true;
+}
+
+bool
+can_cargo(struct item_st *destination_item, struct item_st *inventory, int destination_slot, int *error_slot)
+{
+	if (destination_slot > 119)
+		return false;
+
+	if (inventory[destination_slot].item_id != 0)
+		return false;
+
+	if (destination_item->item_id == 0)
+		return false;
+
+	return true;
+}
 
 void
 get_set_affect(int user_index, struct affect_st affect)

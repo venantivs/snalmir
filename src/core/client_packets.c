@@ -256,14 +256,14 @@ request_command(struct packet_request_command *request_command, int user_index)
 	} else if (strcmp(request_command->e_command, "gritar") == 0 || strcmp(request_command->e_command, "spk") == 0) {
 		// TODO: implementar
 		// char msge[60];
-		// sprintf(msge, "[%s]> %s", spw.MOB.Name, pServer->eValue);
+		// sprintf(msge, "[%s]> %s", spw.MOB.Name, request_move_item->eValue);
 		// for (int x = 1; x <= MAX_USERS_PER_CHANNEL; x++)
 		// {
 		// 	if (MainServer.pUser[x].Mode != USER_PLAY) continue;
 		// 	MSG_D1Dh p;
-		// 	p.Header.Index = x;
-		// 	p.Header.Code = 0xD1D;
-		// 	p.Header.Size = sizeof(MSG_D1Dh);
+		// 	p.header.Index = x;
+		// 	p.header.Code = 0xD1D;
+		// 	p.header.Size = sizeof(MSG_D1Dh);
 		// 	strcpy(p.msg, msge);
 		// 	MainServer.pUser[x].cSock.SendOneMessage((char*)&p, xlen(&p));
 		// }
@@ -342,6 +342,234 @@ request_command(struct packet_request_command *request_command, int user_index)
 }
 
 bool
+request_move_item(struct packet_request_move_item *request_move_item, int user_index)
+{
+	struct mob_st *user = &g_mobs[user_index].mob;
+
+	if (request_move_item->source_type == EQUIP_TYPE && request_move_item->source_slot == 12)
+		return true;
+
+	if ((request_move_item->source_slot > 62 && request_move_item->source_type == INV_TYPE))
+		return true;
+
+	if (request_move_item->destination_slot > 62 && request_move_item->destination_type == INV_TYPE)
+		return true;
+
+	if ((request_move_item->source_slot >= 127 && request_move_item->source_type == STORAGE_TYPE))
+		return true;
+
+	if ((request_move_item->destination_slot >= 127 && request_move_item->destination_type == STORAGE_TYPE))
+		return true;
+
+	if ((request_move_item->source_slot > 15 && request_move_item->source_type == EQUIP_TYPE))
+		return true;
+
+	if ((request_move_item->destination_slot > 15 && request_move_item->destination_type == EQUIP_TYPE))
+		return true;
+
+	if (request_move_item->source_slot < 0 || request_move_item->destination_slot < 0)
+		return true;
+
+	if (user->class_master > CLASS_MORTAL && request_move_item->destination_slot == HELM_SLOT && request_move_item->destination_type == EQUIP_TYPE) {
+		send_client_message("Voce nao pode equipar isso !", user_index);
+		return true;
+	}
+
+	if (user->class_master > CLASS_ARCH && request_move_item->source_slot == HELM_SLOT && request_move_item->source_type == EQUIP_TYPE) {
+		if (user->status.level < 199 && user->class_master >= CLASS_ARCH)
+			send_client_message("Voce nao pode retirar!", user_index);
+
+		return true;
+	}
+
+	struct item_st *source_item_ptr = get_item_pointer(user_index, request_move_item->source_type, request_move_item->source_slot);
+	struct item_st *destination_item_ptr = get_item_pointer(user_index, request_move_item->destination_type, request_move_item->destination_slot);
+
+	if (source_item_ptr == NULL || destination_item_ptr == NULL)
+		return false;
+
+	if (source_item_ptr == destination_item_ptr)
+		return false;
+
+	bool destination_success = (destination_item_ptr->item_id == 0);
+	bool source_success = false;
+
+	struct item_st source_item, destination_item;
+	memcpy(&source_item, source_item_ptr, sizeof(struct item_st));
+	memcpy(&destination_item, destination_item_ptr, sizeof(struct item_st));
+
+	if (destination_item.item_id == 413 && source_item.item_id == 413 || destination_item.item_id == 412 && source_item.item_id == 412) {
+		int outs = 0;
+		if (destination_item_ptr->effect[1].value + source_item_ptr->effect[1].value >= 100) {
+			send_create_item(user_index, request_move_item->source_type, request_move_item->source_slot, source_item_ptr);
+			return true;
+		} else if (destination_item_ptr->effect[1].index != 61) {
+			destination_item_ptr->effect[1].index = 61;
+			if (source_item_ptr->effect[1].index == 61) {
+				destination_item_ptr->effect[1].value += source_item_ptr->effect[1].value;
+				source_item_ptr->item_id = 0;
+				destination_item_ptr->effect[1].value += 1;
+			} else {
+				source_item_ptr->item_id = 0;
+				destination_item_ptr->effect[1].value += 2;
+			}
+		} else if (destination_item_ptr->effect[1].index == 61){
+			if (source_item_ptr->effect[1].index == 61) {
+				source_item_ptr->item_id = 0;
+				destination_item_ptr->effect[1].value += source_item_ptr->effect[1].value;
+			} else {
+				source_item_ptr->item_id = 0;
+				destination_item_ptr->effect[1].value += 1;
+			}
+		} else {
+			source_item_ptr->item_id = 0;
+			destination_item_ptr->effect[1].value += 2;
+		}
+
+		send_create_item(user_index, request_move_item->destination_type, request_move_item->destination_slot, destination_item_ptr);
+		send_create_item(user_index, request_move_item->source_type, request_move_item->source_slot, source_item_ptr);
+
+		return true;
+	}
+
+	source_item_ptr->item_id = 0;
+	destination_item_ptr->item_id = 0;
+
+	if (destination_item.item_id != 0) {
+		if (request_move_item->source_type == EQUIP_TYPE) {
+			destination_success = can_equip(user->class_master,
+				&destination_item,
+				&user->status,
+				request_move_item->source_slot,
+				user->class_info,
+				user->equip);
+
+		} else if (request_move_item->source_type == INV_TYPE) {
+			int slot_error = -1;
+
+			destination_success = can_carry(
+				&destination_item,
+				user->inventory,
+				(request_move_item->source_slot),
+				&slot_error);
+
+			if (slot_error != -1) {
+				slot_error--;
+				send_create_item(user_index, INV_TYPE, slot_error, &user->inventory[slot_error]);
+			}
+		} else if (request_move_item->source_type == STORAGE_TYPE) {
+			int slot_error = -1;
+			struct item_st *storage = g_users[user_index].storage;
+
+			destination_success = can_cargo(
+				&destination_item,
+				storage,
+				(request_move_item->source_slot),
+				&slot_error);
+
+			if (slot_error != -1) {
+				slot_error--;
+				send_create_item(user_index, STORAGE_TYPE, slot_error, &storage[slot_error]);
+			}
+		}
+	}
+
+	if (destination_success && source_item.item_id != 0) {
+		if (request_move_item->destination_type == EQUIP_TYPE) {
+			source_success = can_equip(user->class_master,
+				&source_item,
+				&user->status,
+				request_move_item->destination_slot,
+				user->class_info,
+				user->equip);
+
+		} else if (request_move_item->destination_type == INV_TYPE) {
+			int slot_error = -1;
+
+			source_success = can_carry(
+				&source_item,
+				user->inventory,
+				(request_move_item->destination_slot),
+				&slot_error);
+
+			if (slot_error != -1) {
+				slot_error--;
+				send_create_item(user_index, INV_TYPE, slot_error, &user->inventory[slot_error]);
+			}
+		} else if (request_move_item->destination_type == STORAGE_TYPE) {
+			int slot_error = -1;
+			struct item_st *storage = g_users[user_index].storage;
+
+			source_success = can_cargo(
+				&source_item,
+				storage,
+				(request_move_item->destination_slot),
+				&slot_error);
+
+			if (slot_error != -1) {
+				slot_error--;
+				send_create_item(user_index, STORAGE_TYPE, slot_error, &storage[slot_error]);
+			}
+		}
+	}
+
+	if (destination_success && source_success) {
+		memcpy(source_item_ptr, &destination_item, sizeof(struct item_st));
+		memcpy(destination_item_ptr, &source_item, sizeof(struct item_st));
+
+		struct packet_request_move_item move_item;
+		move_item.header.size = sizeof(struct packet_request_move_item);
+		move_item.header.operation_code = 0x376;
+		move_item.header.index = user_index;
+		move_item.destination_slot = request_move_item->destination_slot;
+		move_item.destination_type = request_move_item->destination_type;
+		move_item.source_slot = request_move_item->source_slot;
+		move_item.source_type = request_move_item->source_type;
+
+		add_client_packet((unsigned char *) &move_item, xlen(&move_item), user_index);
+
+		if (request_move_item->destination_type == EQUIP_TYPE || request_move_item->source_type == EQUIP_TYPE) {
+			// Movimenta a arma do slot 2 para o slot da arma 1
+			if ((request_move_item->destination_slot == 6 || request_move_item->source_slot == 6) && user->equip[6].item_id == 0 && user->equip[7].item_id != 0) {
+				int unique_item = get_item_ability(&user->equip[7], EF_POS);
+				if (((unique_item >> 6) & 1) != 0) {
+					memcpy(&user->equip[6], &user->equip[7], sizeof(struct item_st));
+					memset(&user->equip[7], 0, sizeof(struct item_st));
+					move_item.destination_slot = 6;
+					move_item.destination_type = EQUIP_TYPE;
+					move_item.source_slot = 7;
+					move_item.source_type = EQUIP_TYPE;
+
+					add_client_packet((unsigned char *) &move_item, xlen(&move_item), user_index);
+				}
+			}
+			/*else if(request_move_item->destination_slot == MOUNT_SLOT || request_move_item->source_slot == MOUNT_SLOT)
+			{
+			int itemID = user->Equip[MOUNT_SLOT].item_id;
+
+			if(itemID >= 2330 && itemID <= 2359)
+			{
+			int mountIndex = itemID - 2330 + 8;
+			//Spawn.UngenerateBabyMob(Index, DELETE_UNSPAWN);
+			//Spawn.GenerateBabyMob(Index, mountIndex);
+			}
+			}*/
+			send_refresh_equip_items(user_index, user_index);
+		}
+
+		get_current_score(user_index);
+		send_score(user_index);
+		send_etc(user_index);
+		send_all_packets(user_index);
+	} else {
+		memcpy(destination_item_ptr, &destination_item, sizeof(struct item_st));
+		memcpy(source_item_ptr, &source_item, sizeof(struct item_st));
+	}
+
+	return true;
+}
+
+bool
 request_attack(struct packet_attack_area *attack_area, int user_index)
 {
 	if (attack_area->header.operation_code == 0x39D && attack_area->header.size == 96)
@@ -357,7 +585,7 @@ request_attack(struct packet_attack_area *attack_area, int user_index)
 	}
 
 	if (g_mobs[user_index].mob.status.current_hp <= 0 || g_users[user_index].server_data.mode != USER_PLAY) {
-		send_hp_mode (user_index);
+		send_hp_mode(user_index);
 		return false;
 	}
 

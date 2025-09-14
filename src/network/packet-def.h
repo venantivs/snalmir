@@ -277,6 +277,17 @@ struct packet_hp
 	short mode;
 };
 
+// 376H
+struct packet_request_move_item
+{
+	struct packet_header header;
+	unsigned char destination_type;
+	unsigned char destination_slot;
+	unsigned char source_type;
+	unsigned char source_slot;
+	int unknown;
+};
+
 // 338H
 struct packet_dead_mob
 {

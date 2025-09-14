@@ -911,10 +911,10 @@ send_refresh_equip_items(int user_index, int no_send)
 		if (item->effect[0].index == 0)
 			item->item_id = 0;
 
-		effect_value = get_item_sanc(&item);
+		effect_value = get_item_sanc(item);
 		refresh_items.item_effect[i].sanc = effect_value;
 		refresh_items.item_effect[i].item_id = item->item_id;
-		refresh_items.anct_code[i] = get_anct_code(*item);
+		refresh_items.anct_code[i] = get_anct_code(item);
 	}
 
 	send_grid_multicast(g_mobs[user_index].mob.current, (unsigned char *) &refresh_items, no_send);

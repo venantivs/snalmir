@@ -181,3 +181,56 @@ load_game_items()
   load_init_items();
   // TODO: LOAD CUBO
 }
+
+bool
+is_arch_item(int item_index)
+{
+	// SET'S
+	if (item_index >= 1221 && item_index <= 1224)
+    return true;
+	else if (item_index >= 1356 && item_index <= 1359)
+    return true;
+	else if (item_index >= 1506 && item_index <= 1509)
+    return true;
+	else if (item_index >= 1656 && item_index <= 1659)
+    return true;
+	// ARMAS ARCH
+	else if (item_index == 811 || item_index == 826 || item_index == 841)
+    return true;
+	else if (item_index == 856 || item_index == 871 || item_index == 886)
+    return true;
+	else if (item_index == 871 || item_index == 886 || item_index == 903 || item_index == 904)
+    return true;
+	else if (item_index == 912 || item_index == 937 || item_index == 2379 || item_index == 2380)
+    return true;
+	// ARMAS ARCH ANCT
+	else if ((item_index >= 2491 && item_index <= 2494) || (item_index >= 2551 && item_index <= 2554))
+    return true;
+	else if ((item_index >= 2611 && item_index <= 2614) || (item_index >= 2671 && item_index <= 2674))
+    return true;
+	else if ((item_index >= 2791 && item_index <= 2794) || (item_index >= 2859 && item_index <= 2866))
+    return true;
+	else if ((item_index >= 2895 && item_index <= 2898) || (item_index >= 2935 && item_index <= 2938))
+    return true;
+
+	return false;
+}
+
+bool
+is_hardcore_item(int item_index)
+{ 
+	// SETS
+	if (item_index >= 1901 && item_index <= 1910){
+		return true;
+  } else if (item_index == 1230 || item_index == 1231 || item_index == 1232 || item_index == 1667) { // ARMAS ARCH
+		return true;
+	} else if (item_index == 1233 || item_index == 1365 || item_index == 1366 || item_index == 1668) {
+		return true;
+	} else if (item_index == 1367 || item_index == 1368 || item_index == 1515 || item_index == 1516) {
+		return true;
+	} else if (item_index == 1517 || item_index == 1518 || item_index == 1665 || item_index == 1666) {
+		return true;
+	}
+
+	return false;
+}
