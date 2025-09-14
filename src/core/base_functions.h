@@ -22,6 +22,12 @@ void set_total_kills(int mob_index, int frag);
 void get_create_item(int item_index);
 int get_max_ability(struct mob_st *user, int effect);
 void get_affect(int offset, struct affect_st *skills, unsigned char *buffer);
+void get_double_critical(struct mob_st *mob, unsigned char *double_critical);
+short get_damage(short damage, short defense, unsigned char master);
+short get_skill_damage(int skill_index, struct mob_st *mob, int weather, int weapon_damage);
+short get_skill_damage_by_master(short damage, short defense, unsigned char master);
+int get_empty_slot_affect(int user_index);
+void get_set_affect(int user_index, struct affect_st affect);
 int check_pvp_area(int mob_index);
 double get_distance(struct position_st position_a, struct position_st position_b);
 int get_door_type(struct position_st position);
@@ -31,6 +37,8 @@ void set_pk_points(int mob_index, int pk_points);
 int get_cape_id(int item_id);
 unsigned int get_exp_by_kill(unsigned int exp, int attacker_index, int target_index);
 int get_item_slot(int user_index, int item_id, int type);
+int get_pk_points(int mob_index);
+void get_hit_position(struct position_st attacker_pos, struct position_st *target_pos);
 
 // SEND
 void send_grid_mob(int);
@@ -49,5 +57,8 @@ void send_refresh_inventory(int user_index);
 void send_create_item(int user_index, short inventory_type, short inventory_slot, struct item_st *item);
 void send_attack(int attacker_index, int target_index);
 void send_env_effect(struct position_st min, struct position_st max, short effect_id, short time);
+void send_refresh_equip_items(int user_index, int no_send);
+void send_mob_dead(int killer_index, int killed_index);
+void send_hp_mode(int user_index);
 
 #endif

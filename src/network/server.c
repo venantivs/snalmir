@@ -43,8 +43,8 @@ struct settings_st server_settings;
 struct account_file_st g_users_db[MAX_USERS_PER_CHANNEL];
 struct mob_st g_base_char_mobs[MOB_PER_ACCOUNT];
 
-unsigned long current_time;
-int current_weather;
+unsigned long g_current_time;
+int g_current_weather;
 
 int g_sec_counter = 0;
 int g_min_counter = 0;
@@ -65,7 +65,7 @@ static void
 sec_timer()
 {
 	g_sec_counter++;
-	current_time = (unsigned long) time(NULL);
+	g_current_time = (unsigned long) time(NULL);
 
 	spawn_mobs();
 	action_mob(g_sec_counter);
@@ -123,8 +123,8 @@ void
 	memset(g_users_db, 0, sizeof(struct account_file_st) * MAX_USERS_PER_CHANNEL);
 	memset(g_base_char_mobs, 0, sizeof(struct mob_st) * MOB_PER_ACCOUNT);
 
-	current_time = 0;
-	current_weather = 0;
+	g_current_time = 0;
+	g_current_weather = 0;
 
 	g_sec_counter = 0;
 	g_min_counter = 0;

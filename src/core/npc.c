@@ -21,15 +21,15 @@
 #include "utils.h"
 
 struct npcgener_st g_gener_list[MAX_NPCGENERATOR];
-struct mob_st baby_list[MAX_MOB_BABY];
+struct mob_st g_baby_list[MAX_MOB_BABY];
 unsigned load_npc_count = 0;
-unsigned spawn_count = 0;
+unsigned g_spawn_count = 0;
 
 void
 load_npcs()
 {
   memset(g_gener_list, 0, sizeof(struct npcgener_st) * MAX_NPCGENERATOR);
-  memset(baby_list, 0, sizeof(struct mob_st) * MAX_MOB_BABY);
+  memset(g_baby_list, 0, sizeof(struct mob_st) * MAX_MOB_BABY);
   load_npc_count = 0;
 
   read_npc_generator();
@@ -180,7 +180,7 @@ load_mob_baby()
 
     snprintf(file_path, 1024, "./bin/npc_base/%s", baby_mob_name[i]);
 
-    struct mob_st *npc_mob = &baby_list[i];
+    struct mob_st *npc_mob = &g_baby_list[i];
     struct mob_st new_mob = { 0 };
 
     mob_baby_fd = fopen(file_path, "rb");
@@ -286,8 +286,8 @@ spawn_mobs()
 
         current_mob->spawn_type = SPAWN_NORMAL;
 
-        if (index > spawn_count)
-          spawn_count = index;
+        if (index > g_spawn_count)
+          g_spawn_count = index;
       }
     }
   }
@@ -296,7 +296,7 @@ spawn_mobs()
 void
 action_mob(int sec_counter)
 {
-	for (size_t i = (BASE_MOB + 1); i <= spawn_count; i++) {
+	for (size_t i = (BASE_MOB + 1); i <= g_spawn_count; i++) {
     struct mob_server_st *mob = &g_mobs[i];
 
     clock_t opa = get_clock();

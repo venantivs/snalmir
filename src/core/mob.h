@@ -91,6 +91,7 @@ void remove_enemy_list(struct mob_server_st *mob, short target_id);
 void level_up(struct mob_server_st *mob);
 void mob_drop(struct mob_server_st *user, int mob_index);
 int battle_processor(struct mob_server_st *mob);
+int check_get_level(struct mob_server_st *mob);
 
 bool is_dead(struct mob_server_st mob);
 bool is_summon(struct mob_server_st mob);

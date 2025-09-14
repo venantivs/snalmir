@@ -9,6 +9,7 @@
 
 extern struct npcgener_st g_gener_list[MAX_NPCGENERATOR];
 extern struct mob_st g_baby_list[MAX_MOB_BABY];
+extern unsigned g_spawn_count;
 
 void load_npcs();
 void read_npc_generator();

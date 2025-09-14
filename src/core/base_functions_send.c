@@ -496,33 +496,6 @@ send_refresh_inventory(int user_index)
 	add_client_packet((unsigned char *) &inventory, xlen(&inventory), user_index);
 }
 
-short
-get_damage(short damage, short defense, unsigned char master)
-{
-	short result_damage = damage - (defense >> 1);
-	if ((master >> 1) > 7)
-		master = 7;
-
-	int master_factory = 12 - master;
-	if (master_factory <= 0)
-		master_factory = 2;
-
-	int rand_factory = (rand() % master_factory) + master + 99;
-
-	result_damage = (result_damage * rand_factory) / 100;
-	if (result_damage < -50)
-		result_damage = 0;
-	else if (result_damage >= -50 && result_damage < 0)
-		result_damage = (result_damage + 50) / 7;
-	else if (result_damage >= 0 && result_damage <= 50)
-		result_damage = ((result_damage * 5) >> 2) + 7;
-
-	if (result_damage <= 0)
-		result_damage = 1;
-
-	return result_damage;
-}
-
 void
 send_party_experience(short mob_index, short killed_index)
 {
@@ -919,4 +892,42 @@ send_create_item(int user_index, short inventory_type, short inventory_slot, str
 		create_item.item = *item;
 
 	send_one_packet((unsigned char *) &create_item, xlen(&create_item), user_index);
+}
+
+void
+send_refresh_equip_items(int user_index, int no_send)
+{
+	struct packet_refresh_items refresh_items;
+	refresh_items.header.size = sizeof(struct packet_refresh_items);
+	refresh_items.header.operation_code = 0x36B;
+	refresh_items.header.index = user_index;
+
+	for (size_t i = 0; i < 16; i++) {
+		short effect_value = 0;
+		struct item_st *item = &g_mobs[user_index].mob.equip[i];
+
+		if (i == 14)
+		if (item->item_id >= 2360 && item->item_id <= 2389)
+		if (item->effect[0].index == 0)
+			item->item_id = 0;
+
+		effect_value = get_item_sanc(&item);
+		refresh_items.item_effect[i].sanc = effect_value;
+		refresh_items.item_effect[i].item_id = item->item_id;
+		refresh_items.anct_code[i] = get_anct_code(*item);
+	}
+
+	send_grid_multicast(g_mobs[user_index].mob.current, (unsigned char *) &refresh_items, no_send);
+}
+
+void
+send_hp_mode(int user_index)
+{
+	struct packet_hp refresh_hp;
+	refresh_hp.header.index= user_index;
+	refresh_hp.header.operation_code = 0x292;
+	refresh_hp.header.size = sizeof(struct packet_hp);
+	refresh_hp.current_hp = g_mobs[user_index].mob.status.current_hp;
+	refresh_hp.mode = g_mobs[user_index].mode;
+	send_grid_multicast(g_mobs[user_index].mob.current, (unsigned char *) &refresh_hp, 0);
 }

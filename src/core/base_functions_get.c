@@ -15,6 +15,7 @@
 #include "item_effect.h"
 #include "game_items.h"
 #include "game_skills.h"
+#include "world.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -855,6 +856,252 @@ get_affect_score(struct mob_server_st *user)
 		{
 			user->mob.status.defense += ((user->mob.status.t_master * 3) / 2);
 		}
+	}
+}
+
+void
+get_double_critical(struct mob_st *mob, unsigned char *double_critical)
+{
+	int critical_rate = (rand() % 300);
+	int attack_speed_rate = (rand() % 180);
+	int CritValue = mob->critical;
+	float attack_speed_value = mob->atack_speed << 1;
+	bool critical_success = false;
+	bool attack_speed_success = false;
+
+	*double_critical = p39x_NORMAL;
+	if (mob->class_master >= CLASS_ARCH)
+		*double_critical = p39x_SUPER;
+
+	if (critical_rate <= CritValue) {
+		critical_success = true;
+		*double_critical = p39x_CRITICO;
+
+		if (mob->class_master >= CLASS_ARCH)
+			*double_critical = p39x_S_CRITICO;
+	}
+		
+	if (attack_speed_rate <= attack_speed_value) {
+		attack_speed_success = true;
+		*double_critical = p39x_D_NORMAL;
+
+		if (mob->class_master >= CLASS_ARCH)
+			*double_critical = p39x_D_SUPER;
+	}
+	
+	if (critical_success && attack_speed_success) {
+		*double_critical = p39x_D_CRITICO;
+
+		if (mob->class_master >= CLASS_ARCH)
+			*double_critical = p39x_D_S_CRITICO;
+	}
+}
+
+short
+get_damage(short damage, short defense, unsigned char master)
+{
+	short result_damage = damage - (defense >> 1);
+	if ((master >> 1) > 7)
+		master = 7;
+
+	int master_factory = 12 - master;
+	if (master_factory <= 0)
+		master_factory = 2;
+
+	int rand_factory = (rand() % master_factory) + master + 99;
+
+	result_damage = (result_damage * rand_factory) / 100;
+	if (result_damage < -50)
+		result_damage = 0;
+	else if (result_damage >= -50 && result_damage < 0)
+		result_damage = (result_damage + 50) / 7;
+	else if (result_damage >= 0 && result_damage <= 50)
+		result_damage = ((result_damage * 5) >> 2) + 7;
+
+	if (result_damage <= 0)
+		result_damage = 1;
+
+	return result_damage;
+}
+
+void
+get_hit_position(struct position_st attacker_pos, struct position_st *target_pos)
+{
+	if (attacker_pos.X == target_pos->X && attacker_pos.Y == target_pos->Y)
+		return;
+
+	if (attacker_pos.X == 0 || attacker_pos.Y == 0 || target_pos->X == 0 || target_pos->Y == 0)
+		return;
+	
+	int distance = get_distance(attacker_pos, *target_pos);
+	if (distance <= 1)
+		return;
+
+	int attacker = g_height_grid[attacker_pos.Y][attacker_pos.X];
+	int target = g_height_grid[target_pos->Y][target_pos->X];
+	if (attacker == 127 || target == 127) {
+		target_pos->X = 0;
+		target_pos->Y = 0;
+	}
+}
+
+short
+get_skill_damage(int skill_index, struct mob_st *mob, int weather, int weapon_damage)
+{
+	int value[5];
+	short damage[2];
+	int type = g_skill_data[skill_index].instance_type;  // local1
+	int mod = skill_index % 24;
+	value[0] = (mod >> 3);
+
+	value[1] = mob->status.level;
+	if (value[1] < 0)
+		value[1] = 0;
+
+	if (value[1] > 400)
+		value[1] = 400;
+
+	value[2] = *(unsigned char*)(&mob->status.f_master + value[0]);
+
+	damage[0] = g_skill_data[skill_index].instance_value;
+	damage[1] = g_skill_data[skill_index].tick_value;
+
+	short retn = 0; //local7
+
+	if (type == 0) {
+		switch (skill_index) {
+		case 11:
+			retn = value[2] / 10 + damage[1];
+			break;
+		case 13:
+			retn = ((value[2] * 3) >> 2) + damage[1];
+			break;
+		case 41:
+			retn = value[2] / 25 + 2;
+			break;
+		case 43:
+			retn = value[2] / 3 + damage[1];
+			break;
+		case 44:
+			retn = ((value[2] * 3) / 20 + damage[1]) << 1;
+			break;
+		case 45:
+			retn = (value[2] / 10 + damage[1]);
+			break;
+		default:
+			return retn;
+		}
+	}
+
+	if (type >= 1 && type <= 5) {
+		int local8 = skill_index >> 3;
+
+		if (skill_index == 97)
+			retn = value[1] * 15 + damage[0];
+		else if (!mob->class_info && local8 == 1)
+			retn = (damage[0] + value[2]) + (value[1] >> 1) + (mob->status.strength >> 1) + (weapon_damage * 3);
+		else if (!mob->class_info && local8 != 1)
+			retn = (damage[0] + value[2]) + (value[1] >> 1 + weapon_damage + (mob->status.strength >> 2));
+		else if (mob->class_info == 1 || mob->class_info == 2)
+			retn = damage[0] + value[2] + (value[1] >> 1) + (mob->status.intelligence / 2);
+		else if (mob->class_info == 3)
+			retn = damage[0] + value[2] + (value[1] >> 1) + (mob->status.strength >> 1) + (weapon_damage * 3);
+
+		if (weather == 1) {
+			if (skill_index == 2)
+				retn = retn * 90 / 100;
+			else if (skill_index == 5)
+				retn = retn * 130 / 100;
+		} else if (weather == 2 && skill_index == 3)
+			retn = retn * 120 / 100;
+
+		if (skill_index == 97) {
+			retn = retn;
+			return retn;
+		} else if (mob->class_info || local8 != 1) {
+			if (mob->class_info == 3) {
+				return (retn * 5 >> 2);
+			} else {
+				retn = ((mob->magic_increment * 2) + 100) * retn / 100;
+				retn = retn * 5 >> 2;
+			}
+		} else {
+			return (retn * 5 >> 2);
+		}
+	} else if (type == 6) {
+		return (value[2] * 3 + damage[0]);
+	} else if (type == 11) {
+		retn = damage[0];
+		return retn;
+	} else {
+		retn = mob->magic_increment;
+	}
+
+	return retn;
+}
+
+short
+get_skill_damage_by_master(short damage, short defense, unsigned char master)
+{
+	short result_damage = damage - (defense >> 1);
+	if (master > 15)
+		master = 15;
+
+	int master_factory = 21 - master;
+	if (master_factory <= 0) master_factory = 2;
+	int rand_factory = (rand() % master_factory) + master + 90;
+
+	result_damage = (result_damage * rand_factory) / 100;
+	if (result_damage < -50)
+		result_damage = 0;
+	else if (result_damage >= -50 && result_damage < 0)
+		result_damage = (result_damage + 50) / 10;
+	else if (result_damage >= 0 && result_damage <= 50)
+		result_damage = ((result_damage * 5) >> 2) + 5;
+
+	if (result_damage <= 0)
+		result_damage = 1;
+
+	return result_damage;
+}
+
+int
+get_empty_slot_affect(int user_index)
+{
+	struct mob_st *mob = &g_mobs[user_index].mob;
+
+	for (size_t i = 0; i < MAX_AFFECT; i++) {
+		if (mob->affect[i].index == 0)
+			return i;
+	}
+
+	return -1;
+}
+
+
+void
+get_set_affect(int user_index, struct affect_st affect)
+{
+	struct mob_st *mob = &g_mobs[user_index].mob;
+
+	for (size_t i = 0; i < MAX_AFFECT; i++) {
+		if (mob->affect[i].index == affect.index) {
+			mob->affect[i].master= affect.master;
+			mob->affect[i].value = affect.value;
+			mob->affect[i].time = affect.time;
+			g_mobs[user_index].buffer_time[i] = (mob->affect[i].time * 8);
+			return;
+		}
+	}
+
+	int slot = get_empty_slot_affect(user_index);
+
+	if (slot != -1) {
+		mob->affect[slot].index = affect.index;
+		mob->affect[slot].master = affect.master;
+		mob->affect[slot].time = affect.time;
+		mob->affect[slot].value = affect.value;
+		g_mobs[user_index].buffer_time[slot] = (mob->affect[slot].time * 8);
 	}
 }
 

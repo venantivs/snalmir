@@ -210,6 +210,48 @@ struct packet_attack_single
 	struct target_st target;
 };
 
+// 39EH
+struct packet_attack_straight
+{
+	struct packet_header header;
+	short attacker_id; // Id de quem realiza o ataque
+	short attack_count;
+	struct position_st attacker_pos; // Posicao X e Y de quem Ataca
+	struct position_st target_pos; // Posicao X e Y de quem Sofre o Ataque
+	short skill_index; // Id da skill usada
+	short current_mp; // Mp atual de quem Ataca
+	char motion;
+	char skill_parm;
+	char flag_local;
+	char double_critical; // 0 para critico Simples, 1 para critico Duplo
+	int hold;
+	int current_exp;
+	short required_mp; // Mp necessario para usar a Skill
+	short rsv;
+	struct target_st target[2];
+};
+
+// 36CH
+struct packet_attack_area
+{
+	struct packet_header header;
+	short attacker_id; // Id de quem realiza o ataque
+	short attack_count;
+	struct position_st attacker_pos; // Posicao X e Y de quem Ataca
+	struct position_st target_pos; // Posicao X e Y de quem Sofre o Ataque
+	short skill_index; // Id da skill usada
+	short current_mp; // Mp atual de quem Ataca
+	char motion;
+	char skill_parm;
+	char flag_local;
+	char double_critical; // 0 para critico Simples, 1 para critico Duplo
+	int hold;
+	int current_exp;
+	short required_mp; // Mp necessario para usar a Skill
+	short rsv;
+	struct target_st target[13];
+};
+
 // 28BH
 struct packet_request_npc
 {
@@ -225,6 +267,14 @@ struct packet_mob_chat_message
 {
 	struct packet_header header;
 	char message[96];
+};
+
+// 292H
+struct packet_hp
+{
+	struct packet_header header;
+	short current_hp;
+	short mode;
 };
 
 // 338H
@@ -264,6 +314,19 @@ struct packet_refresh_inventory
 	int gold;
 };
 
+// 36BH
+struct packet_refresh_items
+{
+	struct packet_header header;
+	struct
+	{
+		unsigned short item_id : 12;
+		unsigned short sanc : 4;
+	} item_effect[16];
+
+	char anct_code[16];
+};
+
 // 3B9H
 struct packet_affect
 {
@@ -289,6 +352,15 @@ struct packet_request_action
 	int type;
 	struct position_st destiny_position;
 	char command[24];
+};
+
+// 290H
+struct packet_request_teleport
+{
+	struct packet_header header;
+	unsigned char unknown[12];
+	unsigned short X;
+	unsigned short Y;
 };
 
 // 374H

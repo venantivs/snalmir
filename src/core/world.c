@@ -17,7 +17,7 @@
 
 short g_mob_grid[MAX_INIT_ITEM_LIST][MAX_INIT_ITEM_LIST] = { 0 };
 short g_item_grid[MAX_INIT_ITEM_LIST][MAX_INIT_ITEM_LIST] = { 0 };
-int height_grid[MAX_INIT_ITEM_LIST][MAX_INIT_ITEM_LIST] = { 0 };
+int g_height_grid[MAX_INIT_ITEM_LIST][MAX_INIT_ITEM_LIST] = { 0 };
 struct guildzone_st g_guild_zone[MAX_GUILD_ZONE] = { 0 };
 struct teleport_st teleport_list[MAX_TELEPORT] = { 0 };
 int teleport_count = 0;
@@ -76,7 +76,7 @@ get_empty_mob_grid(int index, struct position_st *position)
   if (g_mob_grid[position->Y][position->X] == index) return true;
 
   if (g_mob_grid[position->Y][position->X] == 0)
-    if (height_grid[position->Y][position->X] != 127)
+    if (g_height_grid[position->Y][position->X] != 127)
       return true;
 
   for (int y = (position->Y - 1); y <= (position->Y + 1); y++)
@@ -88,7 +88,7 @@ get_empty_mob_grid(int index, struct position_st *position)
 
       if (g_mob_grid[y][x] == 0)
       {
-        if (height_grid[y][x] != 127)
+        if (g_height_grid[y][x] != 127)
         {
           position->X = x;
           position->Y = y;
@@ -107,7 +107,7 @@ get_empty_mob_grid(int index, struct position_st *position)
 
       if (g_mob_grid[y][x] == 0)
       {
-        if (height_grid[y][x] != 127)
+        if (g_height_grid[y][x] != 127)
         {
           position->X = x;
           position->Y = y;
@@ -126,7 +126,7 @@ get_empty_mob_grid(int index, struct position_st *position)
 
       if (g_mob_grid[y][x] == 0)
       {
-        if (height_grid[y][x] != 127)
+        if (g_height_grid[y][x] != 127)
         {
           position->X = x;
           position->Y = y;
@@ -145,7 +145,7 @@ get_empty_mob_grid(int index, struct position_st *position)
 
       if (g_mob_grid[y][x] == 0)
       {
-        if (height_grid[y][x] != 127)
+        if (g_height_grid[y][x] != 127)
         {
           position->X = x;
           position->Y = y;
@@ -164,7 +164,7 @@ get_empty_mob_grid(int index, struct position_st *position)
 
       if (g_mob_grid[y][x] == 0)
       {
-        if (height_grid[y][x] != 127)
+        if (g_height_grid[y][x] != 127)
         {
           position->X = x;
           position->Y = y;
@@ -183,7 +183,7 @@ get_empty_mob_grid(int index, struct position_st *position)
 
       if (g_mob_grid[y][x] == 0)
       {
-        if (height_grid[y][x] != 127)
+        if (g_height_grid[y][x] != 127)
         {
           position->X = x;
           position->Y = y;
@@ -206,7 +206,7 @@ get_empty_item_grid(int index, struct position_st *position)
     return true;
 
   if (g_item_grid[position->Y][position->X] == 0) // ??????
-    if (height_grid[position->Y][position->X] != 127)
+    if (g_height_grid[position->Y][position->X] != 127)
       return true;
 
   for (int y = (position->Y - 1); y <= (position->Y + 1); y++) {
@@ -215,7 +215,7 @@ get_empty_item_grid(int index, struct position_st *position)
         continue;
 
       if (g_item_grid[y][x] == 0) {
-        if (height_grid[y][x] != 127) {
+        if (g_height_grid[y][x] != 127) {
           position->X = x;
           position->Y = y;
           return true;
@@ -236,7 +236,7 @@ read_height_map()
 	if (height_map_fd == NULL)
 		fatal_error("Could not read HeightMap.dat");
 
-	fread(height_grid, 4096, 4096, height_map_fd);
+	fread(g_height_grid, 4096, 4096, height_map_fd);
 	fclose(height_map_fd);
 }
 
@@ -350,7 +350,7 @@ remove_object(int mob_index, struct position_st position, int flag)
 	if (position.X < 0 || position.X >= MAX_GRIDX || position.Y < 0 || position.Y >= MAX_GRIDY)
 		return false;
 
-	if (height_grid[position.Y][position.X] == 127)
+	if (g_height_grid[position.Y][position.X] == 127)
 		return false;
 
 	if (flag == WORLD_MOB) {

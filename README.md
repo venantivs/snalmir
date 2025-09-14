@@ -29,6 +29,7 @@ Por ser um projeto para estudos, o objetivo foi simplificar ao máximo as compli
 - [ ] Mensagem de Chat
 - [ ] Actions
 - [x] Mover
+- [x] Ataque
 - [ ] ...
 
 ## TODOs gerais

@@ -1163,3 +1163,233 @@ mob_drop(struct mob_server_st *user, int mob_index)
 	}
 }
 
+int
+check_get_level(struct mob_server_st *mob)
+{
+		int retSegment = 0;
+		int class_info = mob->mob.class_info;
+		int UpdateSegment = 0;
+		if (mob->mob.class_master <= CLASS_ARCH)
+		{
+			if (mob->mob.b_status.level >= MAX_LEVEL)
+				return 0;
+
+			int CurrentLevel = mob->mob.b_status.level;
+
+			if (CurrentLevel >= MAX_LEVEL - 1)
+				return 0;
+
+			unsigned int CurrentExp = mob->mob.experience;
+
+			unsigned int CurrentLevelExp = experience_mortal_arch[CurrentLevel];
+
+			unsigned int NextLevelExp = experience_mortal_arch[CurrentLevel + 1];
+
+			unsigned int SegmentExp = (NextLevelExp - CurrentLevelExp) / 4;
+			unsigned int FSegment = CurrentLevelExp + SegmentExp;
+			unsigned int SSegment = (SegmentExp * 2) + CurrentLevelExp;
+			unsigned int TSegment = (SegmentExp * 3) + CurrentLevelExp;
+
+			if (CurrentExp > TSegment)
+			{
+				UpdateSegment = 3;
+			}
+			else if (CurrentExp > SSegment)
+			{
+				UpdateSegment = 2;
+			}
+			else if (CurrentExp > FSegment)
+			{
+				UpdateSegment = 1;
+			}
+
+			if (CurrentExp > NextLevelExp)
+			{
+				if (mob->mob.class_master == CLASS_MORTAL)
+				{
+					mob->mob.b_status.level++;
+					if (mob->mob.class_info == 3)
+						mob->mob.b_status.attack += 3;
+					else
+						mob->mob.b_status.attack += 1;
+
+					if (mob->mob.class_info == 2)//bm
+						mob->mob.b_status.defense += 3;
+					else if (mob->mob.class_info == 0)//tk
+						mob->mob.b_status.defense += 2;
+					else
+						mob->mob.b_status.defense += 1;
+
+					if (mob->mob.class_info == 1)//foema
+						mob->mob.b_status.max_mp += 3;
+					else
+						mob->mob.b_status.max_mp += 1;
+
+					if (mob->mob.class_info == 0)//tk
+						mob->mob.b_status.max_hp += 3;
+					else
+						mob->mob.b_status.max_hp += 1;
+
+					mob->mob.hold = 0;
+					get_bonus_score_points(&mob->mob);
+					get_bonus_master_points(&mob->mob);
+					get_bonus_skill_points(&mob->mob);
+				} else if (mob->mob.class_master == CLASS_ARCH) {
+					mob->mob.b_status.level++;
+					mob->mob.arch_level = mob->mob.b_status.level;
+					if (mob->mob.class_info == 3)
+						mob->mob.b_status.attack += 4;
+					else
+						mob->mob.b_status.attack += 2;
+
+					if (mob->mob.class_info == 2)//bm
+						mob->mob.b_status.defense += 4;
+					else if (mob->mob.class_info == 0)//tk
+						mob->mob.b_status.defense += 2;
+					else
+						mob->mob.b_status.defense += 1;
+
+					if (mob->mob.class_info == 1 || mob->mob.class_info == 2)//foema
+						mob->mob.b_status.max_mp += 4;
+					else
+						mob->mob.b_status.max_mp += 2;
+
+					if (mob->mob.class_info == 0)//tk
+						mob->mob.b_status.max_hp += 4;
+					else
+						mob->mob.b_status.max_hp += 2;
+
+					mob->mob.hold = 0;
+					get_bonus_score_points(&mob->mob);
+					get_bonus_master_points(&mob->mob);
+					get_bonus_skill_points(&mob->mob);
+				}
+				retSegment = 4;
+				mob->segment = 0;
+			}
+			else if (CurrentExp >= TSegment && mob->segment < 3)
+			{
+				retSegment = 3;
+				mob->segment = 3;
+			}
+			else if (CurrentExp >= SSegment && mob->segment < 2)
+			{
+				retSegment = 2;
+				mob->segment = 2;
+			}
+			else if (CurrentExp >= FSegment && mob->segment < 1)
+			{
+				retSegment = 1;
+				mob->segment = 1;
+			}
+			else
+			{
+				return retSegment;
+			}
+
+			if (retSegment >= 1 && retSegment <= 4)
+			{
+				mob->mob.b_status.current_hp = mob->mob.b_status.max_hp;
+				mob->mob.b_status.current_mp = mob->mob.b_status.max_mp;
+			}
+			return retSegment;
+		}
+		else if (mob->mob.class_master <= CLASS_SUB_CELESTIAL)
+		{
+			if (mob->mob.b_status.level >= MAX_LEVELCSH)
+				return 0;
+
+			int CurrentLevel = mob->mob.b_status.level;
+
+			if (CurrentLevel >= MAX_LEVELCSH - 1)
+				return 0;
+
+			unsigned int CurrentExp = mob->mob.experience;
+
+			unsigned int CurrentLevelExp = experience_celestial_subcelestial[CurrentLevel]; //500
+
+			unsigned int NextLevelExp = experience_celestial_subcelestial[CurrentLevel + 1]; //1124
+
+			unsigned int SegmentExp = (NextLevelExp - CurrentLevelExp) + (NextLevelExp & 3) >> 2;// (624) + 
+			unsigned int FSegment = CurrentLevelExp + SegmentExp;
+			unsigned int SSegment = (SegmentExp * 2) + CurrentLevelExp;
+			unsigned int TSegment = (SegmentExp * 3) + CurrentLevelExp;
+
+			if (CurrentExp > TSegment)
+			{
+				UpdateSegment = 3;
+			}
+			else if (CurrentExp > SSegment)
+			{
+				UpdateSegment = 2;
+			}
+			else if (CurrentExp > FSegment)
+			{
+				UpdateSegment = 1;
+			}
+
+			if (CurrentExp > NextLevelExp)
+			{
+				mob->mob.b_status.level++;
+				if (mob->mob.class_master == CLASS_CELESTIAL)
+					mob->mob.cele_level = mob->mob.b_status.level;
+
+				if (mob->mob.class_info == 3)
+					mob->mob.b_status.attack += 6;
+				else
+					mob->mob.b_status.attack += 4;
+
+				if (mob->mob.class_info == 2)//bm
+					mob->mob.b_status.defense += 6;
+				else if (mob->mob.class_info == 0)//bm
+					mob->mob.b_status.defense += 4;
+				else
+					mob->mob.b_status.defense += 3;
+
+				if (mob->mob.class_info == 1 || mob->mob.class_info == 2)//foema
+					mob->mob.b_status.max_mp += 7;
+				else
+					mob->mob.b_status.max_mp += 3;
+
+				if (mob->mob.class_info == 0)//tk
+					mob->mob.b_status.max_hp += 7;
+				else
+					mob->mob.b_status.max_hp += 3;
+
+				mob->mob.hold = 0;
+				get_bonus_score_points(&mob->mob);
+				get_bonus_master_points(&mob->mob);
+				get_bonus_skill_points(&mob->mob);
+				UpdateSegment = 4;
+				mob->segment = 0;
+			}
+			else if (CurrentExp >= TSegment && mob->segment < 3)
+			{
+				retSegment = 3;
+				mob->segment = 3;
+			}
+			else if (CurrentExp >= SSegment && mob->segment < 2)
+			{
+				retSegment = 2;
+				mob->segment = 2;
+			}
+			else if (CurrentExp >= FSegment && mob->segment < 1)
+			{
+				retSegment = 1;
+				mob->segment = 1;
+			}
+			else
+			{
+				return retSegment;
+			}
+
+			if (retSegment >= 1 && retSegment <= 4)
+			{
+				mob->mob.b_status.current_hp = mob->mob.b_status.max_hp;
+				mob->mob.b_status.current_mp = mob->mob.b_status.max_mp;
+			}
+			return retSegment;
+		}
+		return retSegment;
+}
+

@@ -77,6 +77,10 @@ segregate_packet(unsigned char *packet, int user_index)
 		return request_update_city((struct packet_request_change_city *) header, user_index);
 	case 0x334:
 		return request_command((struct packet_request_command *) header, user_index);
+	case 0x39D:
+	case 0x39E:
+	case 0x36C:
+		return request_attack((struct packet_attack_area *) header, user_index);
 	case 0x3AE:
 		return request_logout_char(user_index);
 	case 0x366:
