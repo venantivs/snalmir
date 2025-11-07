@@ -147,7 +147,8 @@ request_add_points(struct packet_request_add_points *request_add_points, int use
 }
 
 bool
-request_return_char_list(int user_index) {
+request_return_char_list(int user_index)
+{
 	struct mob_server_st *mob = &g_mobs[user_index];
 
 	if (g_users[user_index].server_data.mode == USER_PLAY) {
@@ -392,6 +393,12 @@ request_command(struct packet_request_command *request_command, int user_index)
 		// 	MainServer.pUser[x].cSock.SendOneMessage((char*)&p, xlen(&p));
 		// }
 		// return true;
+	} else if (strcmp(request_command->e_command, "teleport") == 0) { // For development only
+		if (strcmp(request_command->e_value, "coveiro") == 0) {
+			send_teleport(user_index, (struct position_st) { 2375, 2104 });
+		} else if (strcmp(request_command->e_value, "jardineiro") == 0) {
+			send_teleport(user_index, (struct position_st) { 2222, 1714 });
+		}
 	} else {
 		char name[16];
 		char msg[100];
