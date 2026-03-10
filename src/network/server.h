@@ -21,6 +21,6 @@ extern int g_min_counter;
 extern unsigned long g_current_time;
 extern int g_current_weather;
 
-void	*init_server();
+void	*init_server(void *arg);
 
 #endif

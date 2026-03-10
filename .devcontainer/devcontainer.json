@@ -1,0 +1,14 @@
+{
+  "name": "Snalmir Dev Container",
+  "build": {
+    "dockerfile": "Dockerfile",
+  },
+  "appPort": [8281, 80],
+  "containerEnv": {},
+  "runArgs": [
+    "--cap-add=SYS_PTRACE",
+    "--security-opt",
+    "seccomp=unconfined",
+    "--privileged",
+  ],
+}

@@ -127,7 +127,7 @@ accept_user(int user_index, int socket_fd, unsigned ip, char *ip_str)
 	memset(&g_users[user_index], 0, sizeof(struct user_server_st));
 
 	g_users[user_index].server_data.socket_fd = socket_fd;
-	
+
 	if (strlen(ip_str) <= 16)
 		strncpy(g_users[user_index].server_data.ip_str, ip_str, strlen(ip_str));
 
@@ -402,7 +402,7 @@ enter_world(struct packet_request_enter_world *request_enter_world, int user_ind
 
 	if (mob_account->sub == 2) {
 		struct mob_st mob = { 0 };
-		
+
 		memcpy(&mob, mob_account, sizeof(struct packet_request_enter_world)); // COPIAR SÓ 36 BYTES????
 
 		mob.b_status = sub_cele->b_status;
@@ -531,7 +531,7 @@ save_character(int user_index, int flag)
 		return;
 
 	struct account_file_st *account = &g_users_db[user_index];
-	
+
 	if (account != NULL) {
 		if (character->sub == 2) {
 			// TODO: SUBCELE, IMPLEMENTAR
@@ -584,7 +584,7 @@ close_user(int user_index)
 			if (baby_index <= 0)
 				continue;
 
-			if (baby_index <= MAX_USERS_PER_CHANNEL || baby_index >= MAX_SPAWN_LIST) { 
+			if (baby_index <= MAX_USERS_PER_CHANNEL || baby_index >= MAX_SPAWN_LIST) {
 				mob->baby_mob[i] = 0;
 				continue;
 			}

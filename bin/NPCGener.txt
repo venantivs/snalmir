@@ -155,8 +155,8 @@
 	MaxNumMob:	1
 	MinGroup:	0
 	MaxGroup:	0
-	Leader:		Rei_Harabard
-	Follower:	Rei_Harabard
+	Leader:		King_Harabard
+	Follower:   King_Harabard
 	RouteType:	2
 	Formation:	0
 	StartX:		1750
@@ -578,8 +578,8 @@
 	MaxNumMob:	1
 	MinGroup:	0
 	MaxGroup:	0
-	Leader:		Torre_de_Thor
-	Follower:	Torre_de_Thor
+	Leader:		Tower_of_Thor
+	Follower:	Tower_de_Thor
 	RouteType:	2
 	Formation:	0
 	StartX:		1051
@@ -599,8 +599,8 @@
 	MaxNumMob:	1
 	MinGroup:	0
 	MaxGroup:	0
-	Leader:		Torre_de_Thor
-	Follower:	Torre_de_Thor
+	Leader:		Tower_of_Thor
+	Follower:	Tower_of_Thor
 	RouteType:	2
 	Formation:	0
 	StartX:		1046
@@ -620,8 +620,8 @@
 	MaxNumMob:	1
 	MinGroup:	0
 	MaxGroup:	0
-	Leader:		Torre_de_Thor
-	Follower:	Torre_de_Thor
+	Leader:		Tower_of_Thor
+	Follower:	Tower_of_Thor
 	RouteType:	2
 	Formation:	0
 	StartX:		1124
@@ -629,7 +629,7 @@
 	StartRange:	0
 	StartWait:	9
 	DestX:		1124
-	DestY:		1708
+	DestY:		708
 	DestRange:	0
 	DestWait:	8
 
@@ -28848,8 +28848,8 @@
 	MaxNumMob:	1
 	MinGroup:	0
 	MaxGroup:	0
-	Leader:		Smith
-	Follower:	Smith
+	Leader:		Smith_
+	Follower:	Smith_
 	RouteType:	2
 	Formation:	0
 	StartX:		2500
@@ -29306,43 +29306,23 @@
 // no1070c20
 // ********************************************
 #	[1043]
-	MinuteGenerate:	1
-	MaxNumMob:	1
-	MinGroup:	0
-	MaxGroup:	0
-	Leader:		Cap.Cavaleiros
-	Follower:	Cap.Cavaleiros
-	RouteType:	2
-	Formation:	0
-	StartX:		2445
-	StartY:		1721
-	StartRange:	0
-	StartWait:	9
-	DestX:		2446
-	DestY:		1717
-	DestRange:	0
-	DestWait:	8
+#	MinuteGenerate:	1
+#	MaxNumMob:	1
+#	MinGroup:	0
+#	MaxGroup:	0
+#	Leader:		Cap.Cavaleiros
+#	Follower:	Cap.Cavaleiros
+#	RouteType:	2
+#	Formation:	0
+#	StartX:		2445
+#	StartY:		1721
+#	StartRange:	0
+#	StartWait:	9
+#	DestX:		2446
+#	DestY:		1717
+#	DestRange:	0
+#	DestWait:	8
 
-
-// no1071c21
-// ********************************************
-#	[1044]
-	MinuteGenerate:	1
-	MaxNumMob:	1
-	MinGroup:	0
-	MaxGroup:	0
-	Leader:		Shaman
-	Follower:	Shaman
-	RouteType:	2
-	Formation:	0
-	StartX:		2506
-	StartY:		1727
-	StartRange:	0
-	StartWait:	9
-	DestX:		2508
-	DestY:		1728
-	DestRange:	0
-	DestWait:	8
 
 
 // no1072c22
@@ -33732,22 +33712,22 @@
 // no1264 (�̽�ƽ����E
 // ********************************************
 #	[1197]
-	MinuteGenerate:	1
-	MaxNumMob:	1
-	MinGroup:	0
-	MaxGroup:	0
-	Leader:		Cap.Explor
-	Follower:	Cap.Explor
-	RouteType:	2
-	Formation:	0
-	StartX:		2398
-	StartY:		1602
-	StartRange:	0
-	StartWait:	9
-	DestX:		2404
-	DestY:		1602
-	DestRange:	0
-	DestWait:	10
+#	MinuteGenerate:	1
+#	MaxNumMob:	1
+#	MinGroup:	0
+#	MaxGroup:	0
+#	Leader:		Cap.Explor
+#	Follower:	Cap.Explor
+#	RouteType:	2
+#	Formation:	0
+#	StartX:		2398
+#	StartY:		1602
+#	StartRange:	0
+#	StartWait:	9
+#	DestX:		2404
+#	DestY:		1602
+#	DestRange:	0
+#	DestWait:	10
 
 
 // no1265 (�̽�ƽ����E
@@ -95420,7 +95400,7 @@
 	DestWait:	10
 
 
-// no3780 (0813) 
+// no3780 (0813)
 // ********************************************
 #	[3461]
 	MinuteGenerate:	1
@@ -95441,7 +95421,7 @@
 	DestWait:	7
 
 
-// no3781 (0813) 
+// no3781 (0813)
 // ********************************************
 #	[3462]
 	MinuteGenerate:	1
@@ -95462,7 +95442,7 @@
 	DestWait:	7
 
 
-// no3782 (1113) 
+// no3782 (1113)
 // ********************************************
 #	[3463]
 	MinuteGenerate:	3
@@ -111930,19 +111910,19 @@
 	Follower:	Sephirot_FM
 	RouteType:	2
 	Formation:	0
-	StartX:		1957 
+	StartX:		1957
 	StartY:		1607
 	StartRange:	3
 	StartWait:	9
-	Segment1X:	1957 
+	Segment1X:	1957
 	Segment1Y:	1607
 	Segment1Range:	3
 	Segment1Wait:	8
-	Segment2X:	1957 
+	Segment2X:	1957
 	Segment2Y:	1607
 	Segment2Range:	3
 	Segment2Wait:	8
-	DestX:		1957 
+	DestX:		1957
 	DestY:		1607
 	DestRange:	3
 	DestWait:	10

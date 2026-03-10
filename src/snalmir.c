@@ -21,14 +21,14 @@
 int
 main(void)
 {
-	pthread_t main_server_thread;	
+	pthread_t main_server_thread;
 
 	#if HTTP_SERVER_ENABLED
 		pid_t http_pid = fork();
 
 		if (http_pid < 0)
 			fatal_error("fork http");
-		
+
 		if (http_pid == 0)
 			init_http_server();
 	#endif

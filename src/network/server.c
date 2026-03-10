@@ -51,7 +51,7 @@ int g_min_counter = 0;
 
 static void start_server();
 
-static void 
+static void
 min_timer()
 {
 	g_min_counter++;
@@ -75,7 +75,7 @@ sec_timer()
 
 	for (size_t i = 1; i <= MAX_USERS_PER_CHANNEL; i++) {
 		struct user_server_st *user = &g_users[i];
-		
+
 		if (user->server_data.user_close) {
 			send_all_packets(i);
 			close_user(i);
@@ -95,12 +95,12 @@ sec_timer()
 
 		if (user->server_data.mode == USER_SELCHAR)
 			save_client(i);
-		
-		if (user->server_data.mode >= USER_PLAY) { 
+
+		if (user->server_data.mode >= USER_PLAY) {
 			save_client(i);
 			save_character(i, 0);
 		}
-		
+
 		user->save_time = now;
 	}
 
@@ -108,7 +108,7 @@ sec_timer()
 }
 
 void
-*init_server()
+*init_server(void *arg)
 {
 	start_clock();
 
@@ -220,7 +220,7 @@ start_server()
 
 	set_non_blocking(listen_socket_fd);
 
-	epoll_ctl_add(epfd, listen_socket_fd, EPOLLIN | EPOLLET);	
+	epoll_ctl_add(epfd, listen_socket_fd, EPOLLIN | EPOLLET);
 
 	memset(&server_address, 0, sizeof(server_address));
 	server_address.sin_family = AF_INET;
@@ -229,14 +229,21 @@ start_server()
 
 	if (bind(listen_socket_fd, (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
 		fatal_error("bind");
-	
+
 	if (listen(listen_socket_fd, 16) < 0)
 		fatal_error("listen");
 
 	while (true) {
-		if ((nfds = epoll_wait(epfd, events, 20, 500)) < 0)
-			fatal_error("epoll_wait");
-			
+
+	    do {
+			nfds = epoll_wait(epfd, events, 20, 500);
+		} while (nfds < 0 && errno == EINTR);
+
+		if (nfds < 0 && errno != EINTR) {
+			printf("%d", errno);
+            fatal_error("epoll_wait");
+		}
+
 		for (size_t i = 0; i < nfds; ++i) {
 			if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP) || (!(events[i].events & EPOLLIN))) {
 				close(events[i].data.fd);
@@ -256,10 +263,10 @@ start_server()
 							break;
 						else {
 							perror("accept");
-							break;	
+							break;
 						}
 					}
-					
+
 					char *ip_str = inet_ntoa(client_address.sin_addr);
 
 					set_non_blocking(connection_socket_fd);
